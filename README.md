@@ -1,10 +1,10 @@
-# SentinelFlow
+# Adaptive Stream Learning with Concept Drift Detection for Real-Time Financial Fraud Detection
 
-SentinelFlow is a machine-learning project for real-time credit-card fraud detection under concept drift. It compares static fraud models with adaptive online models to measure how reliably they detect fraud as transaction behavior evolves.
+Adaptive Stream Learning with Concept Drift Detection for Real-Time Financial Fraud Detection is a machine-learning project for real-time credit-card fraud detection under concept drift. It compares static fraud models with adaptive online models to measure how reliably they detect fraud as transaction behavior evolves.
 
 ## Project Title
 
-**Machine Learning for Real-Time Fraud Detection Under Concept Drift**
+**Adaptive Stream Learning with Concept Drift Detection for Real-Time Financial Fraud Detection**
 
 ## Problem
 
