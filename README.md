@@ -1,78 +1,63 @@
-# Adaptive Stream Learning with Concept Drift Detection for Real-Time Financial Fraud Detection
+# SentinelFlow
 
-Adaptive Stream Learning with Concept Drift Detection for Real-Time Financial Fraud Detection is a machine-learning project for real-time credit-card fraud detection under concept drift. It compares static fraud models with adaptive online models to measure how reliably they detect fraud as transaction behavior evolves.
+SentinelFlow is an experimental machine-learning project for real-time digital-payment fraud detection under concept drift. It compares static and adaptive fraud models to determine how reliably they identify fraud as transaction behavior evolves.
 
 ## Project Title
 
-**Adaptive Stream Learning with Concept Drift Detection for Real-Time Financial Fraud Detection**
+**Adaptive Stream Learning with Concept Drift Detection for Real-Time Digital Payment Fraud Detection**
 
 ## Problem
 
-Digital payment systems must detect suspicious transactions quickly while minimizing false alerts for legitimate customers. Fraud patterns and customer behavior change over time, causing static models trained on historical data to degrade. SentinelFlow evaluates whether adaptive models and drift detection can recover performance more effectively than static models.
+Digital payment systems must detect suspicious transactions quickly while minimizing false alerts for legitimate customers. Fraud patterns and cardholder behavior change over time, causing static models trained on historical data to degrade. SentinelFlow evaluates whether adaptive stream-learning and drift-detection methods maintain performance more effectively than static models.
 
 ## Objectives
 
 - Simulate a chronological stream of credit-card transactions.
 - Compare static and adaptive fraud-detection models.
-- Detect sudden and gradual concept drift.
-- Adapt models after drift events and measure recovery.
-- Report precision, recall, F1-score, PR-AUC, false-positive rate, detection delay, and recovery time.
+- Monitor changing transaction behavior and detect concept drift.
+- Adapt models after significant stream changes.
+- Report precision, recall, F1-score, ROC-AUC, and false-positive rate.
 
-## High-Level Architecture
+## Project Flowchart
 
-```text
-Public credit-card dataset
-        |
-        v
-Data preparation and chronological batching
-        |
-        v
-Transaction stream simulator
-        |
-        +-------------------------------+
-        |                               |
-        v                               v
-Static models                    Adaptive online models
-- Logistic Regression            - Online Logistic Regression
-- Random Forest                  - Adaptive Random Forest
-        |                               |
-        +---------------+---------------+
-                        |
-                        v
-Performance monitor and drift detectors
-- ADWIN / DDM
-- Rolling fraud metrics
-                        |
-                        v
-Adaptation controller
-- Recent-window retraining
-- Model reset or replacement
-                        |
-                        v
-Results, plots, and experiment report
+```mermaid
+flowchart TD
+    A[Public credit-card transaction dataset] --> B[Chronological data preparation]
+    B --> C[Sequential-batch stream simulator]
+    C --> D[Static baseline models\nLogistic Regression or Random Forest]
+    C --> E[Adaptive models\nIncremental learning and sliding-window ensembles]
+    E --> F[Drift detection\nADWIN and DDM]
+    F --> G[Adaptation\nUpdate or retrain with recent observations]
+    D --> H[Performance comparison]
+    G --> H
+    H --> I[Metrics\nPrecision, Recall, F1-score, ROC-AUC, False-positive rate]
+    I --> J[Experimental prototype and performance visualizations]
 ```
 
 ## Approach
 
 1. Prepare a public, anonymized credit-card transaction dataset and retain its chronological order.
 2. Train static baseline models using an initial historical window.
-3. Send later transactions through a batch-based stream simulator.
+3. Deliver later transactions in sequential batches that emulate a live stream.
 4. Run static and adaptive models side by side.
-5. Feed model errors or losses into drift detectors.
-6. When drift is detected, retrain or replace the affected adaptive model using recent observations.
-7. Compare model performance before, during, and after drift events.
+5. Use ADWIN and DDM to identify significant stream changes.
+6. Update or retrain adaptive models using recent observations after detected drift.
+7. Compare performance across successive time windows.
 
-The initial dataset is suitable for severe class-imbalance experiments, but it spans only two days. SentinelFlow will therefore include controlled sudden- and gradual-drift scenarios and will clearly document this limitation.
+The project focuses on an experimental prototype. It excludes production deployment, live banking infrastructure, customer identity verification, and live transaction blocking.
 
 ## Planned Technology
 
-- Python 3.11+
-- pandas and NumPy for preparation and analysis
-- scikit-learn for offline baseline models
-- River for incremental learning, adaptive models, and drift detection
-- Matplotlib and Seaborn for evaluation plots
-- Jupyter Notebook for experiments
-- GitHub Actions for continuous integration
+### Emerging technologies
+
+- Dynamic risk features and entity profiling
+- Adaptive windowing and drift detection with ADWIN
+- Incremental learning and sliding-window ensembles
+
+### Tools and languages
+
+- OpenAI Codex for literature-review assistance, reference verification, code-generation support, and documentation drafting
+- Python 3.11+ with pandas, NumPy, scikit-learn, River, Matplotlib, and Seaborn
 
 ## Planned Repository Layout
 
@@ -95,10 +80,8 @@ Primary evaluation metrics:
 
 - Precision and recall
 - F1-score
-- Precision-recall AUC
+- ROC-AUC
 - False-positive rate
-- Detection delay after a drift event
-- Recovery time after adaptation
 
 Accuracy is not a primary metric because fraud transactions are rare.
 
@@ -117,7 +100,7 @@ GitHub Actions runs on every push and pull request. The workflow verifies that t
 
 ## Team
 
-- Sanjay Solararamavu Dev -- Leader
+- Sanjay Soralamavu Dev -- Leader
 - Hemalasya Annapureddy -- Deputy Leader
 - Abhipsa Panda
 - Aravindan Chidambaram
