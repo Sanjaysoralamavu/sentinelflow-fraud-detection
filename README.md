@@ -1,10 +1,7 @@
 # Adaptive Real-Time Detection of Card-Not-Present Credit Card Fraud under Concept Drift
 
-SentinelFlow is an experimental machine-learning project for real-time digital-payment fraud detection under concept drift. It compares static and adaptive fraud models to determine how reliably they identify fraud as transaction behavior evolves.
+Adaptive Real-Time Detection of Card-Not-Present Credit Card Fraud under Concept Drift is an experimental machine-learning project for real-time digital-payment fraud detection under concept drift. It compares static and adaptive fraud models to determine how reliably they identify fraud as transaction behavior evolves.
 
-## Project Title
-
-**Adaptive Stream Learning with Concept Drift Detection for Real-Time Digital Payment Fraud Detection**
 
 ## Problem
 
