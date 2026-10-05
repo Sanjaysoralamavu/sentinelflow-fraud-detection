@@ -29,18 +29,13 @@ jobs:
         run: test -f README.md
 
       - name: Install project and development dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+        run: make install
 
       - name: Validate Python syntax
         run: python -m compileall -q src tests
 
       - name: Run Ruff checks
-        run: python -m ruff check .
-
-      - name: Verify Ruff formatting
-        run: python -m ruff format --check .
+        run: make lint
 
       - name: Run tests
-        run: python -m pytest
+        run: make test
