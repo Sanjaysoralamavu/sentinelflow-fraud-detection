@@ -1,0 +1,46 @@
+# Python environments
+.venv/
+venv/
+env/
+
+# Python-generated files
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Testing and linting
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local development tools
+.codebase-memory/
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Environment variables and credentials
+.env
+.env.*
+*.key
+*.pem
+
+# Raw and processed datasets
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+*.parquet
+
+# Local temporary results
+results/logs/
+results/tmp/
+
+# Serialized models
+*.joblib
+*.pkl
