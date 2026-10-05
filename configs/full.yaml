@@ -1,0 +1,67 @@
+project:
+  name: SentinelFlow
+  random_seed: 543
+
+paths:
+  dataset: data/raw/credit_card_fraud.parquet
+  results: results
+
+data:
+  target_column: is_fraud
+  cnp_column: card_present_cnp
+  cnp_values:
+    - cnp_online
+    - cnp_moto
+  batch_size: 50000
+  warmup_rows: 500000
+  drop_columns:
+    - customer_id
+    - transaction_id
+
+stream:
+  label_delay_batches: 7
+  row_group_shuffle: true
+  within_batch_shuffle: true
+
+drift:
+  enabled: true
+  start_fraction: 0.45
+  end_fraction: 0.70
+  max_intensity: 0.90
+  random_seed: 1543
+
+models:
+  threshold: 0.50
+  positive_weight_cap: 25.0
+
+  random_forest:
+    enabled: true
+    training_rows: 300000
+    n_estimators: 150
+    max_depth: 18
+    min_samples_leaf: 5
+
+  adaptive:
+    detectors:
+      - none
+      - adwin
+      - ddm
+    alpha: 0.0001
+    detector_sample_size: 2000
+    recent_window_rows: 200000
+    adwin_delta: 0.002
+    ddm_warm_start: 30
+    detector_grace_batches: 12
+    detector_cooldown_batches: 20
+
+  online_ensemble:
+    enabled: true
+    n_estimators: 5
+    alpha: 0.0001
+
+evaluation:
+  probability_bins: 2000
+  save_every_batches: 10
+  save_models: true
+  generate_plots: true
+  generate_dashboard: true
