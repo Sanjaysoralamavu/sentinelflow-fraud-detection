@@ -52,9 +52,7 @@ class DriftSettings:
 
     def __post_init__(self) -> None:
         if not 0.0 <= self.start_fraction < self.end_fraction <= 1.0:
-            raise ValueError(
-                "start_fraction and end_fraction must satisfy 0 <= start < end <= 1."
-            )
+            raise ValueError("start_fraction and end_fraction must satisfy 0 <= start < end <= 1.")
         if not 0.0 <= self.max_intensity <= 1.0:
             raise ValueError("max_intensity must be between zero and one.")
         if self.shift_scale < 0:
