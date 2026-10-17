@@ -33,6 +33,8 @@ import pyarrow as pa
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
+DEFAULT_IDENTIFIER_COLUMNS: tuple[str, ...] = ("customer_id", "transaction_id")
+
 
 class DatasetError(ValueError):
     """Base class for dataset problems that must stop an experiment."""
@@ -88,7 +90,7 @@ class DataSettings:
     target_column: str = "is_fraud"
     cnp_column: str = "card_present_cnp"
     cnp_values: tuple[str, ...] = ("cnp_online", "cnp_moto")
-    drop_columns: tuple[str, ...] = ("customer_id", "transaction_id")
+    drop_columns: tuple[str, ...] = DEFAULT_IDENTIFIER_COLUMNS
     warmup_rows: int = 500_000
     row_group_shuffle: bool = False
     shuffle_seed: int | None = None
@@ -117,7 +119,7 @@ class DataSettings:
             target_column=config.target_column,
             cnp_column=config.cnp_column,
             cnp_values=config.cnp_values,
-            drop_columns=tuple(str(column) for column in data.get("drop_columns", ())),
+            drop_columns=configured_drop_columns(data),
             warmup_rows=config.warmup_rows,
             row_group_shuffle=bool(config.section("stream").get("row_group_shuffle", False)),
             shuffle_seed=config.seed,
@@ -173,6 +175,14 @@ class WarmupSet:
     @property
     def row_count(self) -> int:
         return len(self.labels)
+
+
+def configured_drop_columns(data: dict[str, Any]) -> tuple[str, ...]:
+    """Identifier columns to exclude; the safe defaults apply when the key is absent."""
+
+    if data.get("drop_columns") is None:
+        return DEFAULT_IDENTIFIER_COLUMNS
+    return tuple(str(column) for column in data["drop_columns"])
 
 
 def open_parquet(settings: DataSettings) -> pq.ParquetFile:

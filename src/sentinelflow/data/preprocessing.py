@@ -33,6 +33,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer, OneHotEncoder, StandardScaler
 
+from sentinelflow.data.loader import DEFAULT_IDENTIFIER_COLUMNS, configured_drop_columns
+
 DEFAULT_MAX_CATEGORIES = 100
 MISSING_CATEGORY = "__missing__"
 
@@ -154,7 +156,7 @@ class FraudPreprocessor:
         self,
         *,
         target_column: str = "is_fraud",
-        identifier_columns: tuple[str, ...] = ("customer_id", "transaction_id"),
+        identifier_columns: tuple[str, ...] = DEFAULT_IDENTIFIER_COLUMNS,
         exclude_columns: tuple[str, ...] = (),
         max_categories: int = DEFAULT_MAX_CATEGORIES,
         sparse_output: bool = False,
@@ -177,7 +179,7 @@ class FraudPreprocessor:
         options = data.get("preprocessing") or {}
         return cls(
             target_column=config.target_column,
-            identifier_columns=tuple(data.get("drop_columns", ())),
+            identifier_columns=configured_drop_columns(data),
             exclude_columns=tuple(options.get("exclude_columns", ())),
             max_categories=int(options.get("max_categories", DEFAULT_MAX_CATEGORIES)),
             sparse_output=bool(options.get("sparse_output", False)),

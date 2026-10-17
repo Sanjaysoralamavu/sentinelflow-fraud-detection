@@ -573,7 +573,7 @@
       "max": null,
       "mean": null,
       "distinct": ">10000",
-      "examples": "CUST_A_0000009|CUST_A_0000010|CUST_A_0000030|CUST_A_0000088|CUST_A_0000089|CUST_A_0000127|CUST_A_0000129|CUST_A_0000148"
+      "examples": "<redacted: identifier column>"
     },
     {
       "column": "transaction_id",
@@ -585,7 +585,7 @@
       "max": null,
       "mean": null,
       "distinct": ">10000",
-      "examples": "TXN_0_0000018|TXN_0_0000020|TXN_0_0000027|TXN_0_0000030|TXN_0_0000035|TXN_0_0000037|TXN_0_0000039|TXN_0_0000042"
+      "examples": "<redacted: identifier column>"
     },
     {
       "column": "segment",
@@ -945,5 +945,5 @@
     "Column names that suggest label-derived content: chargeback_history_count"
   ],
   "passed": true,
-  "elapsed_seconds": 9.15
+  "elapsed_seconds": 13.9
 }

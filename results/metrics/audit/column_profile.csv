@@ -28,8 +28,8 @@ card_present_cnp,string,15000000,0,0.0,,,,6,card_present_chip|card_present_swipe
 order_shipping_speed,string,15000000,0,0.0,,,,5,expedited|in_store_pickup|overnight|same_day|standard
 account_age_days,int16,15000000,0,0.0,0,3649,1029.879038,,
 chargeback_history_count,int8,15000000,0,0.0,0,3,0.152863,,
-customer_id,string,15000000,0,0.0,,,,>10000,CUST_A_0000009|CUST_A_0000010|CUST_A_0000030|CUST_A_0000088|CUST_A_0000089|CUST_A_0000127|CUST_A_0000129|CUST_A_0000148
-transaction_id,string,15000000,0,0.0,,,,>10000,TXN_0_0000018|TXN_0_0000020|TXN_0_0000027|TXN_0_0000030|TXN_0_0000035|TXN_0_0000037|TXN_0_0000039|TXN_0_0000042
+customer_id,string,15000000,0,0.0,,,,>10000,<redacted: identifier column>
+transaction_id,string,15000000,0,0.0,,,,>10000,<redacted: identifier column>
 segment,string,15000000,0,0.0,,,,4,A_established|B_regular|C_new|D_guest
 customer_type,string,15000000,0,0.0,,,,2,customer_based|global
 is_fraud,int8,15000000,0,0.0,0,1,0.049015,,

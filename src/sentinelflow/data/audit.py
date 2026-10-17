@@ -45,6 +45,7 @@ from sentinelflow.data.loader import (
 
 VERIFIED_SHA256 = "4a33623216213beb121cdc85006cf36f336601af7645e73feabe1abdf94e0823"
 NULL_CHANNEL = "<null>"
+REDACTED = "<redacted: identifier column>"
 LEAKAGE_AUC_THRESHOLD = 0.99
 SUSPICIOUS_NAME = re.compile(
     r"fraud|label|target|chargeback|dispute|cluster|scenario|pattern|signal|noise",
@@ -78,8 +79,11 @@ def sha256_file(path: str | Path, chunk_bytes: int = 8 * 1024 * 1024) -> str:
 class _ColumnProfile:
     """Running per-column statistics accumulated across row groups."""
 
-    def __init__(self, name: str, arrow_type: pa.DataType, max_distinct: int) -> None:
+    def __init__(
+        self, name: str, arrow_type: pa.DataType, max_distinct: int, *, redact: bool = False
+    ) -> None:
         self.name = name
+        self.redact = redact
         self.arrow_type = arrow_type
         self.max_distinct = max_distinct
         self.rows = 0
@@ -136,7 +140,7 @@ class _ColumnProfile:
         examples = ""
         if self.tracks_distinct:
             distinct = f">{self.max_distinct}" if self.distinct_capped else len(self.distinct)
-            examples = "|".join(sorted(map(str, self.distinct))[:8])
+            examples = REDACTED if self.redact else "|".join(sorted(map(str, self.distinct))[:8])
         return {
             "column": self.name,
             "arrow_type": str(self.arrow_type),
@@ -250,7 +254,13 @@ def audit_dataset(
     schema = parquet.schema_arrow
 
     profiles = {
-        field.name: _ColumnProfile(field.name, field.type, max_distinct) for field in schema
+        field.name: _ColumnProfile(
+            field.name,
+            field.type,
+            max_distinct,
+            redact=field.name in settings.drop_columns,
+        )
+        for field in schema
     }
     counts: list[pd.DataFrame] = []
     target_problems: list[str] = []

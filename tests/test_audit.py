@@ -8,6 +8,7 @@ from conftest import write_parquet
 
 from sentinelflow.data.audit import (
     NO_EXPECTATIONS,
+    REDACTED,
     ExpectedCounts,
     audit_dataset,
     sha256_file,
@@ -89,3 +90,21 @@ def test_outputs_written(data_settings, tmp_path: Path) -> None:
     header = paths["channels"].read_text().splitlines()[0]
     assert header == "channel,is_cnp,rows,fraud_rows,fraud_rate"
     assert paths["columns"].stat().st_size > 0
+
+
+def test_identifier_examples_are_redacted(data_settings, synthetic_frame, tmp_path: Path) -> None:
+    report = audit_dataset(data_settings, expected=NO_EXPECTATIONS)
+    columns = {row["column"]: row for row in report["columns"]}
+
+    for column in ("customer_id", "transaction_id"):
+        assert columns[column]["examples"] == REDACTED
+
+    assert columns["device_type"]["examples"] != REDACTED
+    assert "mobile" in columns["device_type"]["examples"]
+
+    paths = write_audit_outputs(report, tmp_path / "audit")
+    written = paths["columns"].read_text() + paths["audit"].read_text()
+    for value in synthetic_frame["transaction_id"].head(50):
+        assert value not in written
+    for value in synthetic_frame["customer_id"].unique()[:50]:
+        assert value not in written

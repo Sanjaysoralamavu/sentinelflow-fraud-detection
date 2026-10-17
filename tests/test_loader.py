@@ -186,3 +186,28 @@ def test_shuffle_flag_read_from_config(tmp_path: Path, synthetic_parquet) -> Non
     settings = DataSettings.from_config(load_config(path))
     assert settings.row_group_shuffle is True
     assert settings.shuffle_seed == raw["project"]["random_seed"]
+
+
+def test_identifiers_excluded_when_drop_columns_omitted(tmp_path: Path, synthetic_parquet) -> None:
+    import yaml
+
+    from sentinelflow.config import load_config
+    from sentinelflow.data.preprocessing import FraudPreprocessor
+
+    root = Path(__file__).resolve().parents[1]
+    raw = yaml.safe_load((root / "configs" / "full.yaml").read_text())
+    raw["paths"]["dataset"] = str(synthetic_parquet)
+    del raw["data"]["drop_columns"]
+    (tmp_path / "configs").mkdir()
+    path = tmp_path / "configs" / "no_drop.yaml"
+    path.write_text(yaml.safe_dump(raw))
+    config = load_config(path)
+
+    settings = DataSettings.from_config(config)
+    assert set(settings.drop_columns) == {"customer_id", "transaction_id"}
+    for chunk in iter_cnp_chunks(settings):
+        assert "customer_id" not in chunk.features.columns
+        assert "transaction_id" not in chunk.features.columns
+
+    preprocessor = FraudPreprocessor.from_config(config)
+    assert set(preprocessor.identifier_columns) == {"customer_id", "transaction_id"}
