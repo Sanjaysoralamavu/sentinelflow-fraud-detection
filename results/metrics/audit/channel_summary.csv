@@ -1,0 +1,7 @@
+channel,is_cnp,rows,fraud_rows,fraud_rate
+card_present_chip,False,4298379,19128,0.00445
+card_present_swipe,False,2150585,9489,0.004412
+cnp_moto,True,844586,130316,0.154296
+cnp_online,True,2999067,433956,0.144697
+contactless,False,4028484,33325,0.008272
+manual_entry,False,678899,109010,0.160569
