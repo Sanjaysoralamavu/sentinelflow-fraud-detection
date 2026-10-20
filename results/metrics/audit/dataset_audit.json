@@ -1,0 +1,949 @@
+{
+  "dataset": {
+    "path": "credit_card_fraud.parquet",
+    "size_bytes": 510958545,
+    "sha256": "4a33623216213beb121cdc85006cf36f336601af7645e73feabe1abdf94e0823",
+    "expected_sha256": "4a33623216213beb121cdc85006cf36f336601af7645e73feabe1abdf94e0823",
+    "num_row_groups": 480,
+    "source_rows": 15000000,
+    "num_columns": 34
+  },
+  "schema": [
+    {
+      "name": "transaction_amount",
+      "type": "float"
+    },
+    {
+      "name": "transaction_amount_bin",
+      "type": "string"
+    },
+    {
+      "name": "avg_amount_deviation_sigma",
+      "type": "float"
+    },
+    {
+      "name": "merchant_category",
+      "type": "string"
+    },
+    {
+      "name": "merchant_risk_score",
+      "type": "string"
+    },
+    {
+      "name": "merchant_category_vs_history",
+      "type": "string"
+    },
+    {
+      "name": "geo_velocity_kmh",
+      "type": "float"
+    },
+    {
+      "name": "geo_velocity_bin",
+      "type": "string"
+    },
+    {
+      "name": "geo_distance_km",
+      "type": "float"
+    },
+    {
+      "name": "geo_distance_bin",
+      "type": "string"
+    },
+    {
+      "name": "merchant_location",
+      "type": "string"
+    },
+    {
+      "name": "country_consistency",
+      "type": "string"
+    },
+    {
+      "name": "ip_address_type",
+      "type": "string"
+    },
+    {
+      "name": "device_fingerprint_match",
+      "type": "string"
+    },
+    {
+      "name": "session_duration_sec",
+      "type": "float"
+    },
+    {
+      "name": "session_duration_bin",
+      "type": "string"
+    },
+    {
+      "name": "network_carrier_type",
+      "type": "string"
+    },
+    {
+      "name": "cards_on_device_30d",
+      "type": "int16"
+    },
+    {
+      "name": "cvv_match_status",
+      "type": "string"
+    },
+    {
+      "name": "three_ds_auth_result",
+      "type": "string"
+    },
+    {
+      "name": "tokenization_used",
+      "type": "string"
+    },
+    {
+      "name": "failed_attempts_before_success",
+      "type": "int8"
+    },
+    {
+      "name": "transaction_velocity_1h",
+      "type": "string"
+    },
+    {
+      "name": "time_of_transaction",
+      "type": "string"
+    },
+    {
+      "name": "account_credential_change_recency",
+      "type": "string"
+    },
+    {
+      "name": "card_present_cnp",
+      "type": "string"
+    },
+    {
+      "name": "order_shipping_speed",
+      "type": "string"
+    },
+    {
+      "name": "account_age_days",
+      "type": "int16"
+    },
+    {
+      "name": "chargeback_history_count",
+      "type": "int8"
+    },
+    {
+      "name": "customer_id",
+      "type": "string"
+    },
+    {
+      "name": "transaction_id",
+      "type": "string"
+    },
+    {
+      "name": "segment",
+      "type": "string"
+    },
+    {
+      "name": "customer_type",
+      "type": "string"
+    },
+    {
+      "name": "is_fraud",
+      "type": "int8"
+    }
+  ],
+  "settings": {
+    "target_column": "is_fraud",
+    "cnp_column": "card_present_cnp",
+    "cnp_values": [
+      "cnp_online",
+      "cnp_moto"
+    ],
+    "drop_columns": [
+      "customer_id",
+      "transaction_id"
+    ],
+    "warmup_rows": 500000
+  },
+  "counts": {
+    "source_rows": 15000000,
+    "source_fraud_rows": 735224,
+    "source_fraud_rate": 0.049015,
+    "cnp_rows": 3843653,
+    "cnp_fraud_rows": 564272,
+    "cnp_fraud_rate": 0.146806,
+    "warmup_rows": 500000,
+    "evaluation_rows": 3343653
+  },
+  "channels": [
+    {
+      "channel": "card_present_chip",
+      "is_cnp": false,
+      "rows": 4298379,
+      "fraud_rows": 19128,
+      "fraud_rate": 0.00445
+    },
+    {
+      "channel": "card_present_swipe",
+      "is_cnp": false,
+      "rows": 2150585,
+      "fraud_rows": 9489,
+      "fraud_rate": 0.004412
+    },
+    {
+      "channel": "cnp_moto",
+      "is_cnp": true,
+      "rows": 844586,
+      "fraud_rows": 130316,
+      "fraud_rate": 0.154296
+    },
+    {
+      "channel": "cnp_online",
+      "is_cnp": true,
+      "rows": 2999067,
+      "fraud_rows": 433956,
+      "fraud_rate": 0.144697
+    },
+    {
+      "channel": "contactless",
+      "is_cnp": false,
+      "rows": 4028484,
+      "fraud_rows": 33325,
+      "fraud_rate": 0.008272
+    },
+    {
+      "channel": "manual_entry",
+      "is_cnp": false,
+      "rows": 678899,
+      "fraud_rows": 109010,
+      "fraud_rate": 0.160569
+    }
+  ],
+  "nulls": {},
+  "columns": [
+    {
+      "column": "transaction_amount",
+      "arrow_type": "float",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": 0.5,
+      "max": 9999.0,
+      "mean": 158.311159,
+      "distinct": null,
+      "examples": ""
+    },
+    {
+      "column": "transaction_amount_bin",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 4,
+      "examples": "high|low|medium|very_high"
+    },
+    {
+      "column": "avg_amount_deviation_sigma",
+      "arrow_type": "float",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": 0.0,
+      "max": 10.0,
+      "mean": 1.312297,
+      "distinct": null,
+      "examples": ""
+    },
+    {
+      "column": "merchant_category",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 9,
+      "examples": "crypto_giftcard|electronics|grocery|healthcare|luxury|restaurant|retail|travel"
+    },
+    {
+      "column": "merchant_risk_score",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 4,
+      "examples": "high_risk|low_risk|medium_risk|very_high_risk"
+    },
+    {
+      "column": "merchant_category_vs_history",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 5,
+      "examples": "frequent_category|never_before_category|no_history|occasional_category|rare_category"
+    },
+    {
+      "column": "geo_velocity_kmh",
+      "arrow_type": "float",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": 0.0,
+      "max": 2500.0,
+      "mean": 43.585731,
+      "distinct": null,
+      "examples": ""
+    },
+    {
+      "column": "geo_velocity_bin",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 3,
+      "examples": "fast|impossible|normal"
+    },
+    {
+      "column": "geo_distance_km",
+      "arrow_type": "float",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": 0.0,
+      "max": 8000.0,
+      "mean": 89.713272,
+      "distinct": null,
+      "examples": ""
+    },
+    {
+      "column": "geo_distance_bin",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 3,
+      "examples": "long|same_location|short"
+    },
+    {
+      "column": "merchant_location",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 4,
+      "examples": "foreign_far|home_city|neighboring_country|same_country"
+    },
+    {
+      "column": "country_consistency",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 4,
+      "examples": "frequent_travel_country|high_risk_country|new_country|same_country"
+    },
+    {
+      "column": "ip_address_type",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 6,
+      "examples": "corporate|datacenter|proxy|residential|tor|vpn"
+    },
+    {
+      "column": "device_fingerprint_match",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 5,
+      "examples": "emulator|known_device|new_device|spoofed|unknown_device"
+    },
+    {
+      "column": "session_duration_sec",
+      "arrow_type": "float",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": 0.30000001192092896,
+      "max": 1800.0,
+      "mean": 160.877635,
+      "distinct": null,
+      "examples": ""
+    },
+    {
+      "column": "session_duration_bin",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 4,
+      "examples": "bot_speed|normal|slow|very_fast"
+    },
+    {
+      "column": "network_carrier_type",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 4,
+      "examples": "corporate_vpn|datacenter_hosting|mobile_data|wifi"
+    },
+    {
+      "column": "cards_on_device_30d",
+      "arrow_type": "int16",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": 1,
+      "max": 17,
+      "mean": 2.036641,
+      "distinct": null,
+      "examples": ""
+    },
+    {
+      "column": "cvv_match_status",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 4,
+      "examples": "cvv2_match|cvv2_mismatch|icvv_match|not_provided"
+    },
+    {
+      "column": "three_ds_auth_result",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 5,
+      "examples": "bypassed|challenge_fail|challenge_pass|frictionless_pass|not_enrolled"
+    },
+    {
+      "column": "tokenization_used",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 5,
+      "examples": "emv_chip_token|issuer_token|network_token_wallet|raw_pan_manual_entry|raw_pan_online"
+    },
+    {
+      "column": "failed_attempts_before_success",
+      "arrow_type": "int8",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": 0,
+      "max": 10,
+      "mean": 0.411951,
+      "distinct": null,
+      "examples": ""
+    },
+    {
+      "column": "transaction_velocity_1h",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 4,
+      "examples": "2x_baseline|5x_baseline|burst_pattern|within_normal"
+    },
+    {
+      "column": "time_of_transaction",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 4,
+      "examples": "afternoon_12_18|evening_18_24|late_night_0_5|morning_6_12"
+    },
+    {
+      "column": "account_credential_change_recency",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 5,
+      "examples": "changed_1_7d_ago|changed_7_30d_ago|changed_within_24h|no_recent_change|not_applicable"
+    },
+    {
+      "column": "card_present_cnp",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 6,
+      "examples": "card_present_chip|card_present_swipe|cnp_moto|cnp_online|contactless|manual_entry"
+    },
+    {
+      "column": "order_shipping_speed",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 5,
+      "examples": "expedited|in_store_pickup|overnight|same_day|standard"
+    },
+    {
+      "column": "account_age_days",
+      "arrow_type": "int16",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": 0,
+      "max": 3649,
+      "mean": 1029.879038,
+      "distinct": null,
+      "examples": ""
+    },
+    {
+      "column": "chargeback_history_count",
+      "arrow_type": "int8",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": 0,
+      "max": 3,
+      "mean": 0.152863,
+      "distinct": null,
+      "examples": ""
+    },
+    {
+      "column": "customer_id",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": ">10000",
+      "examples": "<redacted: identifier column>"
+    },
+    {
+      "column": "transaction_id",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": ">10000",
+      "examples": "<redacted: identifier column>"
+    },
+    {
+      "column": "segment",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 4,
+      "examples": "A_established|B_regular|C_new|D_guest"
+    },
+    {
+      "column": "customer_type",
+      "arrow_type": "string",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": null,
+      "max": null,
+      "mean": null,
+      "distinct": 2,
+      "examples": "customer_based|global"
+    },
+    {
+      "column": "is_fraud",
+      "arrow_type": "int8",
+      "rows": 15000000,
+      "nulls": 0,
+      "null_fraction": 0.0,
+      "min": 0,
+      "max": 1,
+      "mean": 0.049015,
+      "distinct": null,
+      "examples": ""
+    }
+  ],
+  "leakage_screen": {
+    "sample_rows": 200000,
+    "auc_threshold": 0.99,
+    "results": [
+      {
+        "column": "geo_distance_km",
+        "kind": "numeric",
+        "auc": 0.945511,
+        "strength": 0.945511,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "avg_amount_deviation_sigma",
+        "kind": "numeric",
+        "auc": 0.940058,
+        "strength": 0.940058,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "device_fingerprint_match",
+        "kind": "categorical",
+        "auc": 0.934598,
+        "strength": 0.934598,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "geo_velocity_kmh",
+        "kind": "numeric",
+        "auc": 0.927326,
+        "strength": 0.927326,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "merchant_category_vs_history",
+        "kind": "categorical",
+        "auc": 0.9262,
+        "strength": 0.9262,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "cards_on_device_30d",
+        "kind": "numeric",
+        "auc": 0.925975,
+        "strength": 0.925975,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "transaction_velocity_1h",
+        "kind": "categorical",
+        "auc": 0.917575,
+        "strength": 0.917575,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "ip_address_type",
+        "kind": "categorical",
+        "auc": 0.915804,
+        "strength": 0.915804,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "cvv_match_status",
+        "kind": "categorical",
+        "auc": 0.90593,
+        "strength": 0.90593,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "session_duration_sec",
+        "kind": "numeric",
+        "auc": 0.109153,
+        "strength": 0.890847,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "account_credential_change_recency",
+        "kind": "categorical",
+        "auc": 0.878013,
+        "strength": 0.878013,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "three_ds_auth_result",
+        "kind": "categorical",
+        "auc": 0.87459,
+        "strength": 0.87459,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "country_consistency",
+        "kind": "categorical",
+        "auc": 0.872795,
+        "strength": 0.872795,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "session_duration_bin",
+        "kind": "categorical",
+        "auc": 0.860547,
+        "strength": 0.860547,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "merchant_category",
+        "kind": "categorical",
+        "auc": 0.85955,
+        "strength": 0.85955,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "geo_distance_bin",
+        "kind": "categorical",
+        "auc": 0.856907,
+        "strength": 0.856907,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "geo_velocity_bin",
+        "kind": "categorical",
+        "auc": 0.850063,
+        "strength": 0.850063,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "order_shipping_speed",
+        "kind": "categorical",
+        "auc": 0.836997,
+        "strength": 0.836997,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "merchant_risk_score",
+        "kind": "categorical",
+        "auc": 0.8317,
+        "strength": 0.8317,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "failed_attempts_before_success",
+        "kind": "numeric",
+        "auc": 0.830374,
+        "strength": 0.830374,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "tokenization_used",
+        "kind": "categorical",
+        "auc": 0.826995,
+        "strength": 0.826995,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "merchant_location",
+        "kind": "categorical",
+        "auc": 0.825895,
+        "strength": 0.825895,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "time_of_transaction",
+        "kind": "categorical",
+        "auc": 0.793092,
+        "strength": 0.793092,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "network_carrier_type",
+        "kind": "categorical",
+        "auc": 0.732538,
+        "strength": 0.732538,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "transaction_amount_bin",
+        "kind": "categorical",
+        "auc": 0.690459,
+        "strength": 0.690459,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "transaction_amount",
+        "kind": "numeric",
+        "auc": 0.638952,
+        "strength": 0.638952,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "account_age_days",
+        "kind": "numeric",
+        "auc": 0.505149,
+        "strength": 0.505149,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "card_present_cnp",
+        "kind": "categorical",
+        "auc": 0.50503,
+        "strength": 0.50503,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "chargeback_history_count",
+        "kind": "numeric",
+        "auc": 0.499993,
+        "strength": 0.500007,
+        "name_flag": true,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "segment",
+        "kind": "categorical",
+        "auc": 0.5,
+        "strength": 0.5,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      },
+      {
+        "column": "customer_type",
+        "kind": "categorical",
+        "auc": 0.5,
+        "strength": 0.5,
+        "name_flag": false,
+        "flag": false,
+        "note": ""
+      }
+    ]
+  },
+  "checks": [
+    {
+      "name": "target_is_binary",
+      "passed": true,
+      "detail": "all targets are 0/1 with no nulls"
+    },
+    {
+      "name": "cnp_rows_present",
+      "passed": true,
+      "detail": "3843653 strict-CNP rows"
+    },
+    {
+      "name": "sha256_matches",
+      "passed": true,
+      "detail": "actual=4a33623216213beb121cdc85006cf36f336601af7645e73feabe1abdf94e0823 expected=4a33623216213beb121cdc85006cf36f336601af7645e73feabe1abdf94e0823"
+    },
+    {
+      "name": "source_rows",
+      "passed": true,
+      "detail": "actual=15000000 expected=15000000"
+    },
+    {
+      "name": "cnp_rows",
+      "passed": true,
+      "detail": "actual=3843653 expected=3843653"
+    },
+    {
+      "name": "cnp_fraud_rows",
+      "passed": true,
+      "detail": "actual=564272 expected=564272"
+    }
+  ],
+  "warnings": [
+    "Column names that suggest label-derived content: chargeback_history_count"
+  ],
+  "passed": true,
+  "elapsed_seconds": 13.9
+}
