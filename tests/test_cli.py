@@ -124,7 +124,7 @@ def test_run_command_passes_configuration_and_smoke_limit(
     assert output["summary"]["evaluation_rows"] == 250
     assert output["summary"]["batch_count"] == 1
     assert output["drift_events"] == []
-    assert output["feature_manifest"]["n_output_features"] == 12
+    assert "feature_manifest" not in output
 
     assert output["artifacts"] == {
         "run_manifest": str(expected_output_directory / "run_manifest.json"),

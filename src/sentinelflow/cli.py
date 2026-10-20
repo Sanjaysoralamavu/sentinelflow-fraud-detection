@@ -104,8 +104,12 @@ def _run_experiment(arguments: argparse.Namespace) -> int:
         output_directory,
     )
 
-    output = result.to_dict()
-    output["artifacts"] = {name: str(path) for name, path in artifact_paths.items()}
+    result_data = result.to_dict()
+    output = {
+        "summary": result_data["summary"],
+        "drift_events": result_data["drift_events"],
+        "artifacts": {name: str(path) for name, path in artifact_paths.items()},
+    }
 
     print(json.dumps(output, indent=2, sort_keys=True))
 
