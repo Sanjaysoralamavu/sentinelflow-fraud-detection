@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from sentinelflow.config import ProjectConfig, load_config
+from sentinelflow.experiment import run_experiment
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -33,10 +34,33 @@ def build_parser() -> argparse.ArgumentParser:
     )
     show_config_parser.set_defaults(handler=_show_config)
 
+    run_parser = subparsers.add_parser(
+        "run",
+        help="Run the end-to-end SentinelFlow experiment.",
+    )
+    run_parser.add_argument(
+        "--config",
+        type=Path,
+        default=Path("configs/full.yaml"),
+        help="Path to the YAML configuration file.",
+    )
+    run_parser.add_argument(
+        "--max-evaluation-rows",
+        type=int,
+        default=None,
+        help=(
+            "Limit evaluation rows for a smoke run. "
+            "Omit this option to process the complete audited stream."
+        ),
+    )
+    run_parser.set_defaults(handler=_run_experiment)
+
     return parser
 
 
-def _configuration_summary(config: ProjectConfig) -> dict[str, object]:
+def _configuration_summary(
+    config: ProjectConfig,
+) -> dict[str, object]:
     return {
         "project": config.raw["project"]["name"],
         "random_seed": config.seed,
@@ -57,6 +81,18 @@ def _show_config(arguments: argparse.Namespace) -> int:
     summary = _configuration_summary(config)
 
     print(json.dumps(summary, indent=2, sort_keys=True))
+
+    return 0
+
+
+def _run_experiment(arguments: argparse.Namespace) -> int:
+    config = load_config(arguments.config)
+    result = run_experiment(
+        config,
+        max_evaluation_rows=arguments.max_evaluation_rows,
+    )
+
+    print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
 
     return 0
 
