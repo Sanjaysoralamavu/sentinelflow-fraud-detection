@@ -21,10 +21,10 @@ by ``intensity * shift_scale * column_std`` -- so the *direction* of drift is
 stable for the whole stream and only its magnitude ramps up. Two runs with
 the same seed therefore reproduce byte-identical drifted values.
 
-The no-drift control (``drift.enabled: false``) forces intensity to 0.0 for
-every batch, so ``apply`` always returns an unmodified copy of the input
-features; phase is still computed for logging, but it never gates a feature
-change while disabled.
+The no-drift control (``drift.enabled: false``) forces intensity to 0.0 and
+keeps every batch in phase "pre_drift", so ``apply`` always returns an
+unmodified copy of the input features and no alarm can be attributed to a
+drift phase.
 """
 
 from __future__ import annotations
@@ -81,8 +81,14 @@ class DriftResult:
 
 
 def drift_phase(progress: float, settings: DriftSettings) -> str:
-    """Return the stream phase for ``progress`` under ``settings``'s schedule."""
+    """Return the stream phase for ``progress`` under ``settings``'s schedule.
 
+    With drift disabled (the no-drift control) the whole stream stays in
+    ``PHASE_PRE_DRIFT``, so alarms are never labelled as occurring during drift.
+    """
+
+    if not settings.enabled:
+        return PHASE_PRE_DRIFT
     if progress < settings.start_fraction:
         return PHASE_PRE_DRIFT
     if progress < settings.end_fraction:

@@ -15,7 +15,7 @@ from sentinelflow.data.loader import CNPChunk
 from sentinelflow.models import common
 from sentinelflow.models.adaptive import AdaptiveModel, AdaptiveSettings
 from sentinelflow.streaming import contracts
-from sentinelflow.streaming.contracts import Batch, DelayedBatch
+from sentinelflow.streaming.contracts import PHASE_PRE_DRIFT, Batch, DelayedBatch
 from sentinelflow.streaming.drift_injector import (
     DriftInjector,
     DriftSettings,
@@ -198,6 +198,38 @@ def test_no_drift_control_intensity_always_zero() -> None:
 
     for progress in (0.1, 0.5, 0.6, 0.9, 1.0):
         assert drift_intensity(progress, disabled) == 0.0
+
+
+def test_no_drift_control_phase_stays_stable() -> None:
+    disabled = make_drift_settings(enabled=False)
+
+    for progress in (0.1, 0.45, 0.5, 0.69, 0.7, 0.9, 1.0):
+        assert drift_phase(progress, disabled) == PHASE_PRE_DRIFT
+
+    batches = run_full_stream(make_stream_settings(), disabled)
+    assert {batch.phase for batch in batches} == {PHASE_PRE_DRIFT}
+
+
+def test_no_drift_control_phase_propagates_to_delayed_batches() -> None:
+    batches = run_full_stream(make_stream_settings(), make_drift_settings(enabled=False))
+    queue = DelayedLabelQueue(2)
+    for batch in batches:
+        queue.enqueue(batch, batch.features.to_numpy(), {})
+
+    assert {item.phase for item in queue.flush()} == {PHASE_PRE_DRIFT}
+
+
+def test_no_drift_control_reports_no_affected_rows() -> None:
+    features, labels = make_frame()
+    injector = DriftInjector(make_drift_settings(enabled=False))
+
+    for progress in (0.2, 0.6, 1.0):
+        result = injector.apply(features, labels, progress)
+        assert result.intensity == 0.0
+        assert result.phase == PHASE_PRE_DRIFT
+        assert result.affected_rows == 0
+        assert result.affected_columns == ()
+        pd.testing.assert_frame_equal(result.features, features)
 
 
 # ---------------------------------------------------------------------------
