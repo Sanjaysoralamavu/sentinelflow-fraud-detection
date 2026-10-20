@@ -1,7 +1,8 @@
 """Deterministic batching, delayed-label queue, and prequential driver
 for the SentinelFlow evaluation stream (work package 3).
 
-``batch_stream`` turns the warm-up-excluded evaluation rows into
+``batch_stream`` (in-memory frame) and ``batch_chunks`` (the data loader's
+``CNPChunk`` iterator) turn the warm-up-excluded evaluation rows into
 deterministic, drift-injected ``Batch`` objects. ``DelayedLabelQueue`` holds
 each batch's labels back until its configured delay elapses, releasing them
 in source-batch order once the stream clock (the current batch id) reaches
@@ -21,6 +22,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from sentinelflow.data.loader import CNPChunk
 from sentinelflow.streaming.contracts import Batch, DelayedBatch
 from sentinelflow.streaming.drift_injector import DriftInjector
 
@@ -32,7 +34,6 @@ class StreamSettings:
     batch_size: int
     label_delay_batches: int
     seed: int
-    row_group_shuffle: bool = True
     within_batch_shuffle: bool = True
 
     def __post_init__(self) -> None:
@@ -47,23 +48,39 @@ class StreamSettings:
             batch_size=int(data["batch_size"]),
             label_delay_batches=int(stream["label_delay_batches"]),
             seed=seed,
-            row_group_shuffle=bool(stream.get("row_group_shuffle", True)),
             within_batch_shuffle=bool(stream.get("within_batch_shuffle", True)),
         )
 
 
-def deterministic_order(n_rows: int, settings: StreamSettings) -> np.ndarray:
-    """Return a deterministic row order for the evaluation stream.
+def _make_batch(
+    batch_id: int,
+    features: pd.DataFrame,
+    labels: np.ndarray,
+    source_rows: np.ndarray,
+    progress: float,
+    settings: StreamSettings,
+    drift: DriftInjector,
+) -> Batch:
+    """Apply the seeded within-batch shuffle, then drift, to one batch of rows."""
 
-    When ``row_group_shuffle`` is enabled, the full row order is permuted
-    once (seeded by ``settings.seed``); otherwise rows keep their source
-    order. The same seed always returns the same permutation.
-    """
+    if settings.within_batch_shuffle:
+        batch_rng = np.random.default_rng((settings.seed, batch_id))
+        positions = batch_rng.permutation(len(labels))
+        features = features.iloc[positions]
+        labels = labels[positions]
+        source_rows = source_rows[positions]
 
-    if not settings.row_group_shuffle:
-        return np.arange(n_rows)
-    rng = np.random.default_rng(settings.seed)
-    return rng.permutation(n_rows)
+    features = features.reset_index(drop=True)
+    result = drift.apply(features, labels, progress)
+
+    return Batch(
+        batch_id=batch_id,
+        source_rows=source_rows,
+        progress=progress,
+        phase=result.phase,
+        features=result.features,
+        labels=labels,
+    )
 
 
 def batch_stream(
@@ -72,46 +89,92 @@ def batch_stream(
     settings: StreamSettings,
     drift: DriftInjector,
 ) -> Iterator[Batch]:
-    """Yield deterministic, drift-injected batches of the evaluation stream.
+    """Yield deterministic, drift-injected batches of an in-memory evaluation stream.
 
     ``features``/``labels`` are the warm-up-excluded, already-scoped
-    evaluation rows (``is_fraud`` separated) in their original source order:
-    row 0 is the first evaluation row, not the first dataset row. Batch 0
-    starts at offset 0; the last batch may be shorter than
-    ``settings.batch_size``.
+    evaluation rows (``is_fraud`` separated) in stream order. Row-group
+    shuffling belongs to the data loader (``stream.row_group_shuffle``), so
+    rows are batched in the order given. Batch 0 starts at offset 0; the
+    last batch may be shorter than ``settings.batch_size``.
     """
 
     n_rows = len(labels)
-    if n_rows == 0:
-        return
-
-    order = deterministic_order(n_rows, settings)
-    n_batches = math.ceil(n_rows / settings.batch_size)
     labels = np.asarray(labels)
 
-    for batch_id in range(n_batches):
+    for batch_id in range(math.ceil(n_rows / settings.batch_size)):
         start = batch_id * settings.batch_size
         stop = min(start + settings.batch_size, n_rows)
-        positions = order[start:stop]
-
-        if settings.within_batch_shuffle:
-            batch_rng = np.random.default_rng((settings.seed, batch_id))
-            positions = positions[batch_rng.permutation(len(positions))]
-
-        batch_features = features.iloc[positions].reset_index(drop=True)
-        batch_labels = labels[positions]
-        progress = stop / n_rows
-
-        result = drift.apply(batch_features, batch_labels, progress)
-
-        yield Batch(
-            batch_id=batch_id,
-            source_rows=positions,
-            progress=progress,
-            phase=result.phase,
-            features=result.features,
-            labels=batch_labels,
+        yield _make_batch(
+            batch_id,
+            features.iloc[start:stop],
+            labels[start:stop],
+            np.arange(start, stop),
+            stop / n_rows,
+            settings,
+            drift,
         )
+
+
+def batch_chunks(
+    chunks: Iterable[CNPChunk],
+    total_rows: int,
+    settings: StreamSettings,
+    drift: DriftInjector,
+) -> Iterator[Batch]:
+    """Re-batch the loader's ``CNPChunk`` stream into fixed-size drifted batches.
+
+    ``chunks`` is the evaluation iterator from ``load_warmup_and_stream`` /
+    ``split_warmup``. Chunks follow Parquet row groups and are not batch
+    sized, so rows are buffered and cut every ``settings.batch_size`` rows;
+    memory stays bounded to about one chunk plus one batch. ``total_rows``
+    (the evaluation row count) is needed up front because drift phases are a
+    function of stream progress. ``Batch.source_rows`` holds the loader's
+    global strict-CNP row positions.
+    """
+
+    if total_rows <= 0:
+        return
+
+    buffered: list[CNPChunk] = []
+    buffered_rows = 0
+    batch_id = 0
+    emitted = 0
+
+    def cut(count: int) -> Batch:
+        nonlocal buffered, buffered_rows, batch_id, emitted
+        frame = pd.concat([c.features for c in buffered], ignore_index=True)
+        labels = np.concatenate([c.labels for c in buffered])
+        rows = np.concatenate([c.cnp_rows for c in buffered])
+
+        rest = len(labels) - count
+        buffered = (
+            [CNPChunk(0, rows[count:], frame.iloc[count:].reset_index(drop=True), labels[count:])]
+            if rest
+            else []
+        )
+        buffered_rows = rest
+        emitted += count
+
+        batch = _make_batch(
+            batch_id,
+            frame.iloc[:count],
+            labels[:count],
+            rows[:count],
+            min(emitted / total_rows, 1.0),
+            settings,
+            drift,
+        )
+        batch_id += 1
+        return batch
+
+    for chunk in chunks:
+        buffered.append(chunk)
+        buffered_rows += chunk.row_count
+        while buffered_rows >= settings.batch_size:
+            yield cut(settings.batch_size)
+
+    if buffered_rows:
+        yield cut(buffered_rows)
 
 
 class DelayedLabelQueue:

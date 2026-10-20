@@ -11,6 +11,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from sentinelflow.data.loader import CNPChunk
+from sentinelflow.models import common
+from sentinelflow.models.adaptive import AdaptiveModel, AdaptiveSettings
+from sentinelflow.streaming import contracts
 from sentinelflow.streaming.contracts import Batch, DelayedBatch
 from sentinelflow.streaming.drift_injector import (
     DriftInjector,
@@ -21,6 +25,7 @@ from sentinelflow.streaming.drift_injector import (
 from sentinelflow.streaming.label_delay import (
     DelayedLabelQueue,
     StreamSettings,
+    batch_chunks,
     batch_stream,
     run_stream,
 )
@@ -58,7 +63,6 @@ def make_stream_settings(seed: int = 543, **overrides) -> StreamSettings:
         "batch_size": BATCH_SIZE,
         "label_delay_batches": 7,
         "seed": seed,
-        "row_group_shuffle": True,
         "within_batch_shuffle": True,
     }
     values.update(overrides)
@@ -359,3 +363,70 @@ def test_run_stream_flushes_pending_after_delay_exceeds_stream_length() -> None:
 
     assert calls == [("learn", 0), ("learn", 1), ("learn", 2)]
     assert len(queue) == 0
+
+
+# ---------------------------------------------------------------------------
+# Integration with the data loader and adaptive models
+# ---------------------------------------------------------------------------
+
+
+def test_delayed_batch_is_the_models_definition() -> None:
+    assert contracts.DelayedBatch is common.DelayedBatch
+    assert contracts.WARMUP_BATCH == common.WARMUP_BATCH
+
+
+def test_batch_chunks_matches_batch_stream_for_uneven_chunks() -> None:
+    features, labels = make_frame()
+    settings = make_stream_settings()
+    drift_settings = make_drift_settings()
+
+    expected = list(batch_stream(features, labels, settings, DriftInjector(drift_settings)))
+
+    chunks = []
+    start = 0
+    for size in [137, 500, 61, 1000, 302]:
+        stop = start + size
+        chunks.append(
+            CNPChunk(
+                row_group=len(chunks),
+                cnp_rows=np.arange(start, stop),
+                features=features.iloc[start:stop].reset_index(drop=True),
+                labels=labels[start:stop],
+            )
+        )
+        start = stop
+    assert start == N_ROWS
+
+    actual = list(batch_chunks(chunks, N_ROWS, settings, DriftInjector(drift_settings)))
+
+    assert [b.batch_id for b in actual] == [b.batch_id for b in expected]
+    for left, right in zip(actual, expected, strict=True):
+        assert left.phase == right.phase
+        assert left.progress == pytest.approx(right.progress)
+        np.testing.assert_array_equal(left.source_rows, right.source_rows)
+        np.testing.assert_array_equal(left.labels, right.labels)
+        pd.testing.assert_frame_equal(left.features, right.features)
+
+
+def test_run_stream_feeds_adaptive_model_with_released_labels() -> None:
+    features, labels = make_frame()
+    settings = make_stream_settings(label_delay_batches=3)
+    batches = batch_stream(features, labels, settings, DriftInjector(make_drift_settings()))
+
+    model = AdaptiveModel("adwin", AdaptiveSettings(), seed=543)
+    model.warm_up(features.to_numpy(), labels)
+
+    released: list[DelayedBatch] = []
+
+    def predict(batch: Batch):
+        x = batch.features.to_numpy()
+        return x, {model.name: model.predict_proba(x)}
+
+    def learn(delayed: DelayedBatch) -> None:
+        released.append(delayed)
+        model.learn(delayed)
+
+    run_stream(batches, DelayedLabelQueue(3), predict, lambda b, p: None, learn)
+
+    assert [d.source_batch for d in released] == list(range(10))
+    assert all(d.observed_batch - d.source_batch == 3 for d in released[:7])

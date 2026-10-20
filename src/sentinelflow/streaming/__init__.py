@@ -12,8 +12,8 @@ from sentinelflow.streaming.drift_injector import DriftInjector, DriftResult, Dr
 from sentinelflow.streaming.label_delay import (
     DelayedLabelQueue,
     StreamSettings,
+    batch_chunks,
     batch_stream,
-    deterministic_order,
     run_stream,
 )
 
@@ -29,7 +29,7 @@ __all__ = [
     "DriftSettings",
     "DelayedLabelQueue",
     "StreamSettings",
+    "batch_chunks",
     "batch_stream",
-    "deterministic_order",
     "run_stream",
 ]

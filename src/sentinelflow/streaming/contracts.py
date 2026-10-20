@@ -7,27 +7,24 @@ unit released to the models once its configured delay elapses; its
 ``features`` are whatever the preprocessing + prediction step produced
 (typically a preprocessed numpy or sparse matrix), not ``Batch.features``.
 
-``DelayedBatch`` is field-for-field compatible with the consumer-side copy
-in ``sentinelflow.models.common`` (work package 4). The two packages define
-it independently so each can be built and tested without depending on the
-other's unmerged branch; once both branches land on ``main``, one should
-import the other's definition instead of duplicating it (see the
-contract-change procedure in the implementation plan).
+``DelayedBatch`` and ``WARMUP_BATCH`` are re-exported from
+``sentinelflow.models.common`` (work package 4), the single definition the
+adaptive models consume.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
+from sentinelflow.models.common import WARMUP_BATCH, DelayedBatch
+
 PHASE_PRE_DRIFT = "pre_drift"
 PHASE_RAMP_DRIFT = "ramp_drift"
 PHASE_DRIFTED = "drifted"
-
-WARMUP_BATCH = -1
 
 
 def _row_count(features: Any) -> int:
@@ -73,31 +70,11 @@ class Batch:
         return _row_count(self.features)
 
 
-@dataclass(frozen=True)
-class DelayedBatch:
-    """A labelled batch released to the learners after the configured delay.
-
-    Attributes:
-        source_batch: Batch index at which the rows were scored.
-        observed_batch: Batch index at which the labels became available
-            (``source_batch`` plus the configured label delay).
-        features: Preprocessed feature matrix used for prediction, one row
-            per transaction.
-        labels: Binary ``is_fraud`` labels aligned with ``features``.
-        predictions: Fraud probabilities each model produced at scoring
-            time, keyed by model name.
-        phase: Stream phase of the source batch, if tracked.
-    """
-
-    source_batch: int
-    observed_batch: int
-    features: Any
-    labels: np.ndarray
-    predictions: dict[str, np.ndarray] = field(default_factory=dict)
-    phase: str | None = None
-
-    def __post_init__(self) -> None:
-        if self.observed_batch < self.source_batch:
-            raise ValueError("observed_batch cannot precede source_batch.")
-        if _row_count(self.features) != len(self.labels):
-            raise ValueError("features and labels must have the same number of rows.")
+__all__ = [
+    "PHASE_DRIFTED",
+    "PHASE_PRE_DRIFT",
+    "PHASE_RAMP_DRIFT",
+    "WARMUP_BATCH",
+    "Batch",
+    "DelayedBatch",
+]
