@@ -63,12 +63,35 @@ def test_run_command_passes_configuration_and_smoke_limit(
         captured_arguments["seed"] = config.seed
         captured_arguments["recorder"] = recorder
         captured_arguments["max_evaluation_rows"] = max_evaluation_rows
+
         return FakeResult()
+
+    def fake_write_experiment_artifacts(
+        result: FakeResult,
+        config: ProjectConfig,
+        output_directory: str | Path,
+    ) -> dict[str, Path]:
+        output = Path(output_directory)
+
+        captured_arguments["artifact_seed"] = config.seed
+        captured_arguments["artifact_result"] = result
+        captured_arguments["output_directory"] = output
+
+        return {
+            "run_manifest": output / "run_manifest.json",
+            "feature_manifest": output / "feature_manifest.json",
+            "drift_events": output / "drift_events.json",
+        }
 
     monkeypatch.setattr(
         cli,
         "run_experiment",
         fake_run_experiment,
+    )
+    monkeypatch.setattr(
+        cli,
+        "write_experiment_artifacts",
+        fake_write_experiment_artifacts,
     )
 
     exit_code = cli.main(
@@ -85,13 +108,26 @@ def test_run_command_passes_configuration_and_smoke_limit(
     output = json.loads(captured.out)
 
     assert exit_code == 0
-    assert captured_arguments == {
-        "seed": 543,
-        "recorder": None,
-        "max_evaluation_rows": 250,
-    }
+    assert captured_arguments["seed"] == 543
+    assert captured_arguments["recorder"] is None
+    assert captured_arguments["max_evaluation_rows"] == 250
+    assert captured_arguments["artifact_seed"] == 543
+    assert isinstance(
+        captured_arguments["artifact_result"],
+        FakeResult,
+    )
+
+    expected_output_directory = PROJECT_ROOT / "results" / "metrics" / "experiment"
+    assert captured_arguments["output_directory"] == expected_output_directory
+
     assert output["summary"]["seed"] == 543
     assert output["summary"]["evaluation_rows"] == 250
     assert output["summary"]["batch_count"] == 1
     assert output["drift_events"] == []
     assert output["feature_manifest"]["n_output_features"] == 12
+
+    assert output["artifacts"] == {
+        "run_manifest": str(expected_output_directory / "run_manifest.json"),
+        "feature_manifest": str(expected_output_directory / "feature_manifest.json"),
+        "drift_events": str(expected_output_directory / "drift_events.json"),
+    }

@@ -44,3 +44,6 @@ results/tmp/
 # Serialized models
 *.joblib
 *.pkl
+
+# Generated experiment artifacts
+results/metrics/experiment/

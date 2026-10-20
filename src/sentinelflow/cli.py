@@ -6,7 +6,10 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from sentinelflow.config import ProjectConfig, load_config
-from sentinelflow.experiment import run_experiment
+from sentinelflow.experiment import (
+    run_experiment,
+    write_experiment_artifacts,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -87,12 +90,24 @@ def _show_config(arguments: argparse.Namespace) -> int:
 
 def _run_experiment(arguments: argparse.Namespace) -> int:
     config = load_config(arguments.config)
+
     result = run_experiment(
         config,
         max_evaluation_rows=arguments.max_evaluation_rows,
     )
 
-    print(json.dumps(result.to_dict(), indent=2, sort_keys=True))
+    output_directory = config.results_path / "metrics" / "experiment"
+
+    artifact_paths = write_experiment_artifacts(
+        result,
+        config,
+        output_directory,
+    )
+
+    output = result.to_dict()
+    output["artifacts"] = {name: str(path) for name, path in artifact_paths.items()}
+
+    print(json.dumps(output, indent=2, sort_keys=True))
 
     return 0
 

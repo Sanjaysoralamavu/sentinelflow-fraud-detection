@@ -1,5 +1,6 @@
 """End-to-end tests for SentinelFlow experiment orchestration."""
 
+import json
 from copy import deepcopy
 from pathlib import Path
 
@@ -7,7 +8,7 @@ import numpy as np
 import pytest
 
 from sentinelflow.config import ProjectConfig, load_config
-from sentinelflow.experiment import run_experiment
+from sentinelflow.experiment import run_experiment, write_experiment_artifacts
 from sentinelflow.streaming.contracts import Batch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -239,3 +240,47 @@ def test_full_run_requires_verified_audit(
         match="Dataset audit is required",
     ):
         run_experiment(config)
+
+
+def test_experiment_artifacts_are_written(
+    synthetic_parquet: Path,
+    tmp_path: Path,
+) -> None:
+    config = make_config(synthetic_parquet, tmp_path)
+
+    result = run_experiment(
+        config,
+        max_evaluation_rows=200,
+    )
+
+    output_directory = tmp_path / "experiment-artifacts"
+    paths = write_experiment_artifacts(
+        result,
+        config,
+        output_directory,
+    )
+
+    assert set(paths) == {
+        "run_manifest",
+        "feature_manifest",
+        "drift_events",
+    }
+
+    for path in paths.values():
+        assert path.is_file()
+
+    run_manifest = json.loads(paths["run_manifest"].read_text(encoding="utf-8"))
+    feature_manifest = json.loads(paths["feature_manifest"].read_text(encoding="utf-8"))
+    drift_events = json.loads(paths["drift_events"].read_text(encoding="utf-8"))
+
+    assert run_manifest["summary"]["seed"] == config.seed
+    assert run_manifest["summary"]["warmup_rows"] == 300
+    assert run_manifest["summary"]["evaluation_rows"] == 200
+    assert run_manifest["summary"]["model_names"] == list(result.summary.model_names)
+
+    assert run_manifest["resolved_paths"]["dataset"] == str(config.dataset_path)
+    assert run_manifest["resolved_paths"]["results"] == str(config.results_path)
+
+    assert feature_manifest["n_output_features"] == (result.summary.feature_count)
+    assert isinstance(drift_events, list)
+    assert len(drift_events) == result.summary.drift_event_count

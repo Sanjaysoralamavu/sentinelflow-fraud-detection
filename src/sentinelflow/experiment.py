@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from time import perf_counter
 from typing import Any, Protocol
 
@@ -239,6 +240,43 @@ def run_experiment(
     )
 
 
+def write_experiment_artifacts(
+    result: ExperimentResult,
+    config: ProjectConfig,
+    output_directory: str | Path,
+) -> dict[str, Path]:
+    """Write bounded reproducibility artifacts for one experiment run."""
+
+    output = Path(output_directory)
+    output.mkdir(parents=True, exist_ok=True)
+
+    manifest_path = output / "run_manifest.json"
+    feature_manifest_path = output / "feature_manifest.json"
+    drift_events_path = output / "drift_events.json"
+
+    run_manifest = {
+        "configuration": config.raw,
+        "resolved_paths": {
+            "dataset": str(config.dataset_path),
+            "results": str(config.results_path),
+        },
+        "summary": result.summary.to_dict(),
+    }
+
+    _write_json(manifest_path, run_manifest)
+    _write_json(feature_manifest_path, result.feature_manifest)
+    _write_json(
+        drift_events_path,
+        [asdict(event) for event in result.drift_events],
+    )
+
+    return {
+        "run_manifest": manifest_path,
+        "feature_manifest": feature_manifest_path,
+        "drift_events": drift_events_path,
+    }
+
+
 def _resolve_evaluation_rows(
     config: ProjectConfig,
     *,
@@ -286,3 +324,12 @@ def _load_audited_evaluation_rows(config: ProjectConfig) -> int:
         raise ValueError("The dataset audit must contain a positive evaluation row count.")
 
     return evaluation_rows
+
+
+def _write_json(path: Path, payload: Any) -> None:
+    """Write deterministic, human-readable JSON."""
+
+    path.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
