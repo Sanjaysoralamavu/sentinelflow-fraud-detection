@@ -1,0 +1,102 @@
+"""Evaluation metrics for fraud-detection model predictions."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+from sklearn.metrics import (
+    average_precision_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
+
+
+@dataclass(frozen=True)
+class MetricResult:
+    """Metrics calculated for one model over one set of predictions."""
+
+    tp: int
+    tn: int
+    fp: int
+    fn: int
+    precision: float
+    recall: float
+    f1: float
+    fpr: float
+    roc_auc: float
+    pr_auc: float
+
+
+def calculate_metrics(
+    y_true: np.ndarray,
+    probabilities: np.ndarray,
+    threshold: float = 0.5,
+) -> MetricResult:
+    """Calculate binary fraud-detection metrics."""
+
+    y_true = np.asarray(y_true)
+    probabilities = np.asarray(probabilities)
+
+    if y_true.ndim != 1 or probabilities.ndim != 1:
+        raise ValueError("y_true and probabilities must be one-dimensional.")
+
+    if len(y_true) != len(probabilities):
+        raise ValueError("y_true and probabilities must have the same length.")
+
+    if len(y_true) == 0:
+        raise ValueError("Cannot calculate metrics for an empty batch.")
+
+    if not 0.0 < threshold < 1.0:
+        raise ValueError("threshold must be between zero and one.")
+
+    predicted = (probabilities >= threshold).astype(int)
+
+    tn, fp, fn, tp = confusion_matrix(
+        y_true,
+        predicted,
+        labels=[0, 1],
+    ).ravel()
+
+    precision = precision_score(
+        y_true,
+        predicted,
+        zero_division=0,
+    )
+    recall = recall_score(
+        y_true,
+        predicted,
+        zero_division=0,
+    )
+    f1 = f1_score(
+        y_true,
+        predicted,
+        zero_division=0,
+    )
+
+    negative_count = tn + fp
+    fpr = fp / negative_count if negative_count else 0.0
+
+    # AUC is undefined when the data contains only one class.
+    if len(np.unique(y_true)) < 2:
+        roc_auc = float("nan")
+        pr_auc = float("nan")
+    else:
+        roc_auc = roc_auc_score(y_true, probabilities)
+        pr_auc = average_precision_score(y_true, probabilities)
+
+    return MetricResult(
+        tp=int(tp),
+        tn=int(tn),
+        fp=int(fp),
+        fn=int(fn),
+        precision=float(precision),
+        recall=float(recall),
+        f1=float(f1),
+        fpr=float(fpr),
+        roc_auc=float(roc_auc),
+        pr_auc=float(pr_auc),
+    )
