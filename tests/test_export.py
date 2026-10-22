@@ -10,6 +10,13 @@ from sentinelflow.evaluation.export import (
 )
 from sentinelflow.evaluation.recorder import EvaluationRecorder
 from sentinelflow.streaming.contracts import Batch
+from sentinelflow.evaluation.detectors import DetectorQuality
+from sentinelflow.evaluation.export import (
+    export_batch_metrics,
+    export_detector_quality,
+    export_model_summary,
+    export_phase_summary,
+)
 
 
 def test_evaluation_csv_exports(tmp_path) -> None:
@@ -77,7 +84,7 @@ def test_evaluation_csv_exports(tmp_path) -> None:
         "model_a",
         "model_b",
     }
-    
+
     assert set(phase_frame["phase"]) == {
         "pre_drift",
     }
@@ -90,3 +97,54 @@ def test_evaluation_csv_exports(tmp_path) -> None:
     assert model_b["tn"] == 2
     assert model_b["fp"] == 0
     assert model_b["fn"] == 0
+
+def test_detector_quality_export(tmp_path) -> None:
+    """Detector-quality summaries should be exported to CSV."""
+
+    results = [
+        DetectorQuality(
+            model="adaptive_adwin",
+            detector="adwin",
+            total_alarms=3,
+            false_alarms=1,
+            post_drift_alarms=2,
+            missed_detection=False,
+            source_detection_delay=7,
+            observed_detection_delay=14,
+        ),
+        DetectorQuality(
+            model="adaptive_ddm",
+            detector="ddm",
+            total_alarms=2,
+            false_alarms=0,
+            post_drift_alarms=2,
+            missed_detection=False,
+            source_detection_delay=9,
+            observed_detection_delay=16,
+        ),
+    ]
+
+    output_path = export_detector_quality(
+        results,
+        tmp_path / "detector_quality.csv",
+    )
+
+    assert output_path.exists()
+
+    frame = pd.read_csv(output_path)
+
+    assert len(frame) == 2
+    assert set(frame["detector"]) == {
+        "adwin",
+        "ddm",
+    }
+
+    adwin = frame.loc[
+        frame["detector"] == "adwin"
+    ].iloc[0]
+
+    assert adwin["total_alarms"] == 3
+    assert adwin["false_alarms"] == 1
+    assert adwin["post_drift_alarms"] == 2
+    assert adwin["source_detection_delay"] == 7
+    assert adwin["observed_detection_delay"] == 14

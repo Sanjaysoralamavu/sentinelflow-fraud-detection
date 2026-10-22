@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 from sentinelflow.evaluation.recorder import EvaluationRecorder
+from sentinelflow.evaluation.detectors import DetectorQuality
 
 
 def export_batch_metrics(
@@ -66,6 +67,20 @@ def export_phase_summary(
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    frame = pd.DataFrame(rows)
+    frame.to_csv(output_path, index=False)
+
+    return output_path
+
+def export_detector_quality(
+    results: list[DetectorQuality],
+    output_path: Path,
+) -> Path:
+    """Write detector-quality summaries to CSV."""
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    rows = [asdict(result) for result in results]
     frame = pd.DataFrame(rows)
     frame.to_csv(output_path, index=False)
 
