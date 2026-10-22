@@ -100,3 +100,56 @@ def calculate_metrics(
         roc_auc=float(roc_auc),
         pr_auc=float(pr_auc),
     )
+
+class MetricAccumulator:
+    """Accumulate labels and probabilities for a combined metric summary."""
+
+    def __init__(self, threshold: float = 0.5) -> None:
+        self.threshold = threshold
+        self._labels: list[np.ndarray] = []
+        self._probabilities: list[np.ndarray] = []
+
+    def update(
+        self,
+        y_true: np.ndarray,
+        probabilities: np.ndarray,
+    ) -> None:
+        """Add one batch of labels and prediction probabilities."""
+
+        y_true = np.asarray(y_true)
+        probabilities = np.asarray(probabilities)
+
+        if y_true.ndim != 1 or probabilities.ndim != 1:
+            raise ValueError("y_true and probabilities must be one-dimensional.")
+
+        if len(y_true) != len(probabilities):
+            raise ValueError(
+                "y_true and probabilities must have the same length."
+            )
+
+        if len(y_true) == 0:
+            raise ValueError("Cannot accumulate an empty batch.")
+
+        self._labels.append(y_true.copy())
+        self._probabilities.append(probabilities.copy())
+
+    def calculate(self) -> MetricResult:
+        """Calculate metrics across all accumulated rows."""
+
+        if not self._labels:
+            raise ValueError("No evaluation rows have been accumulated.")
+
+        y_true = np.concatenate(self._labels)
+        probabilities = np.concatenate(self._probabilities)
+
+        return calculate_metrics(
+            y_true,
+            probabilities,
+            threshold=self.threshold,
+        )
+
+    @property
+    def row_count(self) -> int:
+        """Return the number of accumulated evaluation rows."""
+
+        return sum(len(labels) for labels in self._labels)

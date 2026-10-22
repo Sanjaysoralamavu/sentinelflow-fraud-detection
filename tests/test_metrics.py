@@ -3,7 +3,10 @@
 import numpy as np
 import pytest
 
-from sentinelflow.evaluation.metrics import calculate_metrics
+from sentinelflow.evaluation.metrics import (
+    MetricAccumulator,
+    calculate_metrics,
+)
 
 
 def test_calculate_metrics_matches_hand_computed_example() -> None:
@@ -77,3 +80,32 @@ def test_calculate_metrics_rejects_empty_input() -> None:
             np.array([]),
             np.array([]),
         )
+
+def test_metric_accumulator_combines_batches_before_calculating() -> None:
+    """Combined metrics should be calculated over all rows, not batch averages."""
+
+    accumulator = MetricAccumulator(threshold=0.5)
+
+    accumulator.update(
+        np.array([1, 0]),
+        np.array([0.9, 0.8]),
+    )
+
+    accumulator.update(
+        np.array([1, 0, 0]),
+        np.array([0.7, 0.2, 0.1]),
+    )
+
+    result = accumulator.calculate()
+
+    assert accumulator.row_count == 5
+
+    assert result.tp == 2
+    assert result.tn == 2
+    assert result.fp == 1
+    assert result.fn == 0
+
+    assert result.precision == pytest.approx(2 / 3)
+    assert result.recall == pytest.approx(1.0)
+    assert result.f1 == pytest.approx(0.8)
+    assert result.fpr == pytest.approx(1 / 3)
