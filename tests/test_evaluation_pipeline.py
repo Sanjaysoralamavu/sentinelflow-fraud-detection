@@ -87,6 +87,8 @@ def test_generate_evaluation_outputs(tmp_path) -> None:
         "phase_summary",
         "model_summary",
         "detector_quality",
+        "model_comparison_figure",
+        "drift_timeline_figure",
     }
 
     for path in paths.values():

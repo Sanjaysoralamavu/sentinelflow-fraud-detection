@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pandas as pd
+
 from sentinelflow.evaluation.detectors import evaluate_all_detectors
 from sentinelflow.evaluation.export import (
     export_batch_metrics,
@@ -12,6 +14,10 @@ from sentinelflow.evaluation.export import (
     export_phase_summary,
 )
 from sentinelflow.evaluation.recorder import EvaluationRecorder
+from sentinelflow.evaluation.visualization import (
+    plot_drift_timeline,
+    plot_model_comparison,
+)
 from sentinelflow.experiment import ExperimentResult
 
 
@@ -20,7 +26,7 @@ def generate_evaluation_outputs(
     result: ExperimentResult,
     output_dir: Path,
 ) -> dict[str, Path]:
-    """Generate evaluation CSV artifacts for one completed experiment."""
+    """Generate evaluation CSV and figure artifacts for one experiment."""
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -47,5 +53,25 @@ def generate_evaluation_outputs(
             output_dir / "detector_quality.csv",
         ),
     }
+
+    model_summary_frame = pd.read_csv(
+        paths["model_summary"]
+    )
+    batch_metrics_frame = pd.read_csv(
+        paths["batch_metrics"]
+    )
+
+    paths["model_comparison_figure"] = plot_model_comparison(
+        model_summary_frame,
+        output_dir / "model_comparison.png",
+    )
+
+    paths["drift_timeline_figure"] = plot_drift_timeline(
+        batch_metrics_frame,
+        output_dir / "drift_timeline.png",
+        metric="f1",
+        drift_start_batch=recorder.drift_start_batch,
+        drift_events=result.drift_events,
+    )
 
     return paths
