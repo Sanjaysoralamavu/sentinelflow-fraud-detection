@@ -99,7 +99,25 @@ def test_generate_evaluation_outputs(tmp_path) -> None:
         paths["detector_quality"]
     )
 
-    assert len(detector_frame) == 1
-    assert detector_frame.iloc[0]["detector"] == "adwin"
-    assert detector_frame.iloc[0]["source_detection_delay"] == 0
-    assert detector_frame.iloc[0]["observed_detection_delay"] == 7
+    assert len(detector_frame) == 2
+
+    assert set(detector_frame["detector"]) == {
+        "adwin",
+        "ddm",
+    }
+
+    adwin = detector_frame[
+        detector_frame["detector"] == "adwin"
+    ].iloc[0]
+
+    assert adwin["source_detection_delay"] == 0
+    assert adwin["observed_detection_delay"] == 7
+    assert adwin["missed_detection"] == False
+
+    ddm = detector_frame[
+        detector_frame["detector"] == "ddm"
+    ].iloc[0]
+
+    assert ddm["total_alarms"] == 0
+    assert ddm["post_drift_alarms"] == 0
+    assert ddm["missed_detection"] == True

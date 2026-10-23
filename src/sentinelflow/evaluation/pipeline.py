@@ -33,6 +33,10 @@ def generate_evaluation_outputs(
     detector_quality = evaluate_all_detectors(
         result.drift_events,
         drift_start_batch=recorder.drift_start_batch,
+        expected_detectors=(
+            ("adaptive_adwin", "adwin"),
+            ("adaptive_ddm", "ddm"),
+        ),
     )
 
     paths = {
