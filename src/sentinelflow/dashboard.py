@@ -58,7 +58,7 @@ def generate_dashboard(
 
     first_batch = batches[0]
 
-    # Initial state: only the first batch is visible.
+    # Initial state.
     for model_name in models:
         model_frame = ordered[
             (ordered["model"] == model_name)
@@ -81,7 +81,7 @@ def generate_dashboard(
             )
         )
 
-    # One cumulative frame per batch.
+    # Cumulative replay frames.
     frames: list[go.Frame] = []
 
     for current_batch in batches:
@@ -118,7 +118,7 @@ def generate_dashboard(
 
     figure.frames = frames
 
-    # Phase shading remains fixed while the slider moves.
+    # Stream phases.
     phase_ranges = (
         ordered.groupby("phase")["batch"]
         .agg(["min", "max"])
@@ -168,7 +168,7 @@ def generate_dashboard(
             annotation_position="bottom",
         )
 
-    # Slider moves directly between cumulative frames.
+    # Batch slider.
     slider_steps = [
         {
             "method": "animate",
@@ -190,6 +190,45 @@ def generate_dashboard(
         for batch in batches
     ]
 
+    # Replay controls.
+    replay_buttons = [
+        {
+            "label": "▶ Play",
+            "method": "animate",
+            "args": [
+                None,
+                {
+                    "mode": "immediate",
+                    "fromcurrent": True,
+                    "frame": {
+                        "duration": 700,
+                        "redraw": True,
+                    },
+                    "transition": {
+                        "duration": 0,
+                    },
+                },
+            ],
+        },
+        {
+            "label": "⏸ Pause",
+            "method": "animate",
+            "args": [
+                [None],
+                {
+                    "mode": "immediate",
+                    "frame": {
+                        "duration": 0,
+                        "redraw": False,
+                    },
+                    "transition": {
+                        "duration": 0,
+                    },
+                },
+            ],
+        },
+    ]
+
     figure.update_layout(
         title=f"SentinelFlow — {metric.upper()} Experiment Replay",
         xaxis={
@@ -209,6 +248,15 @@ def generate_dashboard(
                 "text": "Model",
             },
         },
+        updatemenus=[
+            {
+                "type": "buttons",
+                "direction": "left",
+                "x": 0.0,
+                "y": -0.12,
+                "buttons": replay_buttons,
+            }
+        ],
         sliders=[
             {
                 "active": 0,
@@ -216,11 +264,14 @@ def generate_dashboard(
                     "prefix": "Batch: ",
                 },
                 "pad": {
-                    "t": 50,
+                    "t": 70,
                 },
                 "steps": slider_steps,
             }
         ],
+        margin={
+            "b": 150,
+        },
     )
 
     html = pio.to_html(
