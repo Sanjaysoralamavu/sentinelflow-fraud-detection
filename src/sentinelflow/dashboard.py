@@ -16,7 +16,7 @@ def generate_dashboard(
     metric: str = "f1",
     drift_start_batch: int | None = None,
 ) -> Path:
-    """Generate a self-contained interactive HTML dashboard."""
+    """Generate a self-contained interactive evaluation dashboard."""
 
     required_columns = {
         "model",
@@ -41,15 +41,17 @@ def generate_dashboard(
         exist_ok=True,
     )
 
+    ordered = batch_metrics.sort_values(
+        ["model", "batch"]
+    ).copy()
+
     figure = px.line(
-        batch_metrics,
+        ordered,
         x="batch",
         y=metric,
         color="model",
-        hover_data=[
-            "phase",
-        ],
         markers=True,
+        hover_data=["phase"],
         title=f"SentinelFlow — {metric.upper()} Across Batches",
     )
 
