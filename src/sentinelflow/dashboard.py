@@ -191,9 +191,28 @@ def generate_dashboard(
     ]
 
     # Replay controls.
+    # These buttons all use the same frames; only frame duration changes.
     replay_buttons = [
         {
-            "label": "▶ Play",
+            "label": "Play 0.5x",
+            "method": "animate",
+            "args": [
+                None,
+                {
+                    "mode": "immediate",
+                    "fromcurrent": True,
+                    "frame": {
+                        "duration": 1400,
+                        "redraw": True,
+                    },
+                    "transition": {
+                        "duration": 0,
+                    },
+                },
+            ],
+        },
+        {
+            "label": "Play 1x",
             "method": "animate",
             "args": [
                 None,
@@ -211,7 +230,25 @@ def generate_dashboard(
             ],
         },
         {
-            "label": "⏸ Pause",
+            "label": "Play 2x",
+            "method": "animate",
+            "args": [
+                None,
+                {
+                    "mode": "immediate",
+                    "fromcurrent": True,
+                    "frame": {
+                        "duration": 350,
+                        "redraw": True,
+                    },
+                    "transition": {
+                        "duration": 0,
+                    },
+                },
+            ],
+        },
+        {
+            "label": "Pause",
             "method": "animate",
             "args": [
                 [None],
@@ -230,7 +267,7 @@ def generate_dashboard(
     ]
 
     figure.update_layout(
-        title=f"SentinelFlow — {metric.upper()} Experiment Replay",
+        title=f"SentinelFlow - {metric.upper()} Experiment Replay",
         xaxis={
             "title": "Batch",
             "range": [
