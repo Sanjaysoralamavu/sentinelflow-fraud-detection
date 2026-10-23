@@ -1,6 +1,9 @@
 """Tests for detector-quality evaluation."""
 
-from sentinelflow.evaluation.detectors import evaluate_detector
+from sentinelflow.evaluation.detectors import (
+    evaluate_all_detectors,
+    evaluate_detector,
+)
 from sentinelflow.models.common import (
     ALARM_CONFIRMED,
     ALARM_SUPPRESSED_COOLDOWN,
@@ -166,3 +169,42 @@ def test_suppressed_signals_are_not_counted_as_confirmed_alarms() -> None:
     assert result.missed_detection is False
     assert result.source_detection_delay == 10
     assert result.observed_detection_delay == 17
+
+def test_evaluate_all_detectors_builds_one_summary_per_detector() -> None:
+    """All detector models should receive their own quality summary."""
+
+    events = [
+        make_event(
+            source_batch=37,
+            observed_batch=44,
+            phase="ramp_drift",
+        ),
+        DriftEvent(
+            model="adaptive_ddm",
+            detector="ddm",
+            source_batch=39,
+            observed_batch=46,
+            phase="ramp_drift",
+            alarm_type="drift",
+            alarm_state=ALARM_CONFIRMED,
+            reset_count=1,
+        ),
+    ]
+
+    results = evaluate_all_detectors(
+        events,
+        drift_start_batch=30,
+    )
+
+    assert len(results) == 2
+
+    by_detector = {
+        result.detector: result
+        for result in results
+    }
+
+    assert by_detector["adwin"].source_detection_delay == 7
+    assert by_detector["adwin"].observed_detection_delay == 14
+
+    assert by_detector["ddm"].source_detection_delay == 9
+    assert by_detector["ddm"].observed_detection_delay == 16

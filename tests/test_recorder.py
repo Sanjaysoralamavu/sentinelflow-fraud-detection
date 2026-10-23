@@ -7,6 +7,7 @@ import pytest
 from sentinelflow.config import load_config
 from sentinelflow.evaluation.recorder import EvaluationRecorder
 from sentinelflow.streaming.contracts import Batch
+from sentinelflow.streaming.drift_injector import DriftSettings
 
 
 def test_recorder_collects_metrics_for_each_model() -> None:
@@ -132,3 +133,78 @@ def test_recorder_builds_phase_and_overall_summaries() -> None:
     assert phases[("model_a", "ramp_drift")].tp == 1
     assert phases[("model_a", "ramp_drift")].tn == 2
     assert phases[("model_a", "ramp_drift")].fp == 0
+
+def make_drift_settings(enabled: bool) -> DriftSettings:
+    """Create drift settings for recorder tests."""
+
+    return DriftSettings(
+        enabled=enabled,
+        start_fraction=0.45,
+        end_fraction=0.70,
+        max_intensity=0.90,
+        random_seed=1543,
+    )
+
+def test_recorder_identifies_first_nonzero_drift_batch() -> None:
+    """First batch with positive injected intensity is ground-truth drift start."""
+
+    recorder = EvaluationRecorder(
+        threshold=0.5,
+        drift_settings=make_drift_settings(enabled=True),
+    )
+
+    pre_drift = Batch(
+        batch_id=0,
+        source_rows=np.array([0, 1]),
+        progress=0.40,
+        phase="pre_drift",
+        features=pd.DataFrame({"feature_a": [1.0, 2.0]}),
+        labels=np.array([0, 1]),
+    )
+
+    first_drift = Batch(
+        batch_id=1,
+        source_rows=np.array([2, 3]),
+        progress=0.50,
+        phase="ramp_drift",
+        features=pd.DataFrame({"feature_a": [3.0, 4.0]}),
+        labels=np.array([0, 1]),
+    )
+
+    predictions = {
+        "model_a": np.array([0.2, 0.8]),
+    }
+
+    recorder.record(pre_drift, predictions)
+
+    assert recorder.drift_start_batch is None
+
+    recorder.record(first_drift, predictions)
+
+    assert recorder.drift_start_batch == 1
+
+def test_recorder_has_no_drift_start_when_drift_disabled() -> None:
+    """No-drift control should never establish a ground-truth drift start."""
+
+    recorder = EvaluationRecorder(
+        threshold=0.5,
+        drift_settings=make_drift_settings(enabled=False),
+    )
+
+    batch = Batch(
+        batch_id=0,
+        source_rows=np.array([0, 1]),
+        progress=0.90,
+        phase="pre_drift",
+        features=pd.DataFrame({"feature_a": [1.0, 2.0]}),
+        labels=np.array([0, 1]),
+    )
+
+    recorder.record(
+        batch,
+        {
+            "model_a": np.array([0.2, 0.8]),
+        },
+    )
+
+    assert recorder.drift_start_batch is None

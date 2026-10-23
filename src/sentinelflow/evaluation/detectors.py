@@ -96,3 +96,27 @@ def evaluate_detector(
             first_detection.observed_batch - drift_start_batch
         ),
     )
+
+def evaluate_all_detectors(
+    events: list[DriftEvent] | tuple[DriftEvent, ...],
+    *,
+    drift_start_batch: int | None,
+) -> list[DetectorQuality]:
+    """Evaluate every detector represented in the experiment events."""
+
+    detector_pairs = sorted(
+        {
+            (event.model, event.detector)
+            for event in events
+        }
+    )
+
+    return [
+        evaluate_detector(
+            events,
+            model=model,
+            detector=detector,
+            drift_start_batch=drift_start_batch,
+        )
+        for model, detector in detector_pairs
+    ]

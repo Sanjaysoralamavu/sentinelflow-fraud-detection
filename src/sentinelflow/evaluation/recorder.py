@@ -12,13 +12,23 @@ from sentinelflow.evaluation.metrics import (
     MetricResult,
     calculate_metrics,
 )
+from sentinelflow.streaming.drift_injector import (
+    DriftSettings,
+    drift_intensity,
+)
 
 
 class EvaluationRecorder:
     """Collect per-model metrics for every scored evaluation batch."""
 
-    def __init__(self, threshold: float = 0.5) -> None:
+    def __init__(
+        self,
+        threshold: float = 0.5,
+        drift_settings: DriftSettings | None = None,
+    ) -> None:
         self.threshold = threshold
+        self.drift_settings = drift_settings
+        self.drift_start_batch: int | None = None
         self.records: list[dict[str, object]] = []
 
         self._overall: dict[str, MetricAccumulator] = {}
@@ -33,9 +43,13 @@ class EvaluationRecorder:
         """Create an evaluation recorder from project configuration."""
             
         model_settings = config.section("models")
-            
+        drift_settings = DriftSettings.from_config(
+            config.section("drift")
+        )
+
         return cls(
             threshold=float(model_settings["threshold"]),
+            drift_settings=drift_settings,
         )
 
     def record(
@@ -44,6 +58,16 @@ class EvaluationRecorder:
         predictions: dict[str, np.ndarray],
     ) -> None:
         """Calculate and store metrics for each model in one batch."""
+        if (
+            self.drift_start_batch is None
+            and self.drift_settings is not None
+            and drift_intensity(
+                batch.progress,
+                self.drift_settings,
+            )
+            > 0.0
+        ):
+            self.drift_start_batch = batch.batch_id
 
         for model_name, probabilities in predictions.items():
             metrics = calculate_metrics(
