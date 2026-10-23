@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
 import plotly.io as pio
 
 from sentinelflow.models.common import (
@@ -22,7 +22,7 @@ def generate_dashboard(
     drift_start_batch: int | None = None,
     drift_events: list[DriftEvent] | tuple[DriftEvent, ...] = (),
 ) -> Path:
-    """Generate a self-contained interactive evaluation dashboard."""
+    """Generate a self-contained dashboard with cumulative batch replay."""
 
     required_columns = {
         "model",
@@ -48,20 +48,77 @@ def generate_dashboard(
     )
 
     ordered = batch_metrics.sort_values(
-        ["model", "batch"]
+        ["batch", "model"]
     ).copy()
 
-    figure = px.line(
-        ordered,
-        x="batch",
-        y=metric,
-        color="model",
-        markers=True,
-        hover_data=["phase"],
-        title=f"SentinelFlow — {metric.upper()} Across Batches",
-    )
+    batches = sorted(ordered["batch"].unique())
+    models = sorted(ordered["model"].unique())
 
-    # Show the stream phases directly on the performance timeline.
+    figure = go.Figure()
+
+    first_batch = batches[0]
+
+    # Initial state: only the first batch is visible.
+    for model_name in models:
+        model_frame = ordered[
+            (ordered["model"] == model_name)
+            & (ordered["batch"] <= first_batch)
+        ]
+
+        figure.add_trace(
+            go.Scatter(
+                x=model_frame["batch"],
+                y=model_frame[metric],
+                mode="lines+markers",
+                name=model_name,
+                customdata=model_frame[["phase"]],
+                hovertemplate=(
+                    "Batch: %{x}<br>"
+                    f"{metric.upper()}: %{{y:.4f}}<br>"
+                    "Phase: %{customdata[0]}"
+                    "<extra>%{fullData.name}</extra>"
+                ),
+            )
+        )
+
+    # One cumulative frame per batch.
+    frames: list[go.Frame] = []
+
+    for current_batch in batches:
+        frame_data = []
+
+        for model_name in models:
+            model_frame = ordered[
+                (ordered["model"] == model_name)
+                & (ordered["batch"] <= current_batch)
+            ]
+
+            frame_data.append(
+                go.Scatter(
+                    x=model_frame["batch"],
+                    y=model_frame[metric],
+                    mode="lines+markers",
+                    name=model_name,
+                    customdata=model_frame[["phase"]],
+                    hovertemplate=(
+                        "Batch: %{x}<br>"
+                        f"{metric.upper()}: %{{y:.4f}}<br>"
+                        "Phase: %{customdata[0]}"
+                        "<extra>%{fullData.name}</extra>"
+                    ),
+                )
+            )
+
+        frames.append(
+            go.Frame(
+                data=frame_data,
+                name=str(current_batch),
+            )
+        )
+
+    figure.frames = frames
+
+    # Phase shading remains fixed while the slider moves.
     phase_ranges = (
         ordered.groupby("phase")["batch"]
         .agg(["min", "max"])
@@ -70,8 +127,8 @@ def generate_dashboard(
 
     for _, row in phase_ranges.iterrows():
         figure.add_vrect(
-            x0=row["min"] - 0.5,
-            x1=row["max"] + 0.5,
+            x0=float(row["min"]) - 0.5,
+            x1=float(row["max"]) + 0.5,
             opacity=0.08,
             line_width=0,
             annotation_text=str(row["phase"]),
@@ -79,7 +136,7 @@ def generate_dashboard(
             layer="below",
         )
 
-    # Ground-truth start of injected concept drift.
+    # Ground-truth drift start.
     if drift_start_batch is not None:
         figure.add_vline(
             x=drift_start_batch,
@@ -88,8 +145,7 @@ def generate_dashboard(
             annotation_position="top",
         )
 
-    # Detector signals are logged even when suppressed. For the main
-    # dashboard, show only confirmed alarms that actually triggered recovery.
+    # Confirmed detector alarms.
     confirmed_events = [
         event
         for event in drift_events
@@ -99,12 +155,11 @@ def generate_dashboard(
     labelled_detectors: set[str] = set()
 
     for event in confirmed_events:
-        detector_name = event.detector.upper()
+        annotation = ""
 
-        annotation = detector_name
-
-        if event.detector in labelled_detectors:
-            annotation = ""
+        if event.detector not in labelled_detectors:
+            annotation = event.detector.upper()
+            labelled_detectors.add(event.detector)
 
         figure.add_vline(
             x=event.source_batch,
@@ -113,14 +168,59 @@ def generate_dashboard(
             annotation_position="bottom",
         )
 
-        labelled_detectors.add(event.detector)
+    # Slider moves directly between cumulative frames.
+    slider_steps = [
+        {
+            "method": "animate",
+            "label": str(batch),
+            "args": [
+                [str(batch)],
+                {
+                    "mode": "immediate",
+                    "frame": {
+                        "duration": 0,
+                        "redraw": True,
+                    },
+                    "transition": {
+                        "duration": 0,
+                    },
+                },
+            ],
+        }
+        for batch in batches
+    ]
 
     figure.update_layout(
-        xaxis_title="Batch",
-        yaxis_title=metric.upper(),
-        yaxis_range=[0.0, 1.05],
+        title=f"SentinelFlow — {metric.upper()} Experiment Replay",
+        xaxis={
+            "title": "Batch",
+            "range": [
+                float(min(batches)) - 0.5,
+                float(max(batches)) + 0.5,
+            ],
+        },
+        yaxis={
+            "title": metric.upper(),
+            "range": [0.0, 1.05],
+        },
         hovermode="x unified",
-        legend_title_text="Model",
+        legend={
+            "title": {
+                "text": "Model",
+            },
+        },
+        sliders=[
+            {
+                "active": 0,
+                "currentvalue": {
+                    "prefix": "Batch: ",
+                },
+                "pad": {
+                    "t": 50,
+                },
+                "steps": slider_steps,
+            }
+        ],
     )
 
     html = pio.to_html(
