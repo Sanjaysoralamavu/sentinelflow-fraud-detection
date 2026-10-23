@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-
+from sentinelflow.dashboard import generate_dashboard
 import pandas as pd
 
 from sentinelflow.evaluation.detectors import evaluate_all_detectors
@@ -72,6 +72,13 @@ def generate_evaluation_outputs(
         metric="f1",
         drift_start_batch=recorder.drift_start_batch,
         drift_events=result.drift_events,
+    )
+
+    paths["dashboard"] = generate_dashboard(
+        batch_metrics_frame,
+        output_dir / "dashboard" / "index.html",
+        metric="f1",
+        drift_start_batch=recorder.drift_start_batch,
     )
 
     return paths

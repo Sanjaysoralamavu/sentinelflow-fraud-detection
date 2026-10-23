@@ -1,0 +1,58 @@
+"""Tests for the SentinelFlow replay dashboard."""
+
+import pandas as pd
+
+from sentinelflow.dashboard import generate_dashboard
+
+
+def test_generate_dashboard_creates_self_contained_html(tmp_path) -> None:
+    """Dashboard should create a standalone interactive HTML file."""
+
+    frame = pd.DataFrame(
+        {
+            "model": [
+                "static_logistic",
+                "static_logistic",
+                "adaptive_adwin",
+                "adaptive_adwin",
+            ],
+            "batch": [
+                0,
+                1,
+                0,
+                1,
+            ],
+            "phase": [
+                "pre_drift",
+                "ramp_drift",
+                "pre_drift",
+                "ramp_drift",
+            ],
+            "f1": [
+                0.90,
+                0.65,
+                0.89,
+                0.85,
+            ],
+        }
+    )
+
+    output_path = generate_dashboard(
+        frame,
+        tmp_path / "index.html",
+        metric="f1",
+        drift_start_batch=1,
+    )
+
+    assert output_path.exists()
+    assert output_path.stat().st_size > 0
+
+    html = output_path.read_text(
+        encoding="utf-8",
+    )
+
+    assert "<html" in html.lower()
+    assert "plotly" in html.lower()
+    assert "static_logistic" in html
+    assert "adaptive_adwin" in html
+    assert "Drift start" in html
