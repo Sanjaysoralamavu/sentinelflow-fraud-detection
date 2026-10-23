@@ -79,6 +79,7 @@ def generate_evaluation_outputs(
         output_dir / "dashboard" / "index.html",
         metric="f1",
         drift_start_batch=recorder.drift_start_batch,
+        drift_events=result.drift_events,
     )
 
     return paths
