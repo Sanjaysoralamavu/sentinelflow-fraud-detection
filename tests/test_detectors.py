@@ -208,3 +208,28 @@ def test_evaluate_all_detectors_builds_one_summary_per_detector() -> None:
 
     assert by_detector["ddm"].source_detection_delay == 9
     assert by_detector["ddm"].observed_detection_delay == 16
+
+def test_evaluate_all_detectors_reports_silent_detector() -> None:
+    """Expected detectors with no events should count as missed detections."""
+
+    results = evaluate_all_detectors(
+        [],
+        drift_start_batch=4,
+        expected_detectors=(
+            ("adaptive_adwin", "adwin"),
+            ("adaptive_ddm", "ddm"),
+        ),
+    )
+
+    assert len(results) == 2
+
+    by_detector = {
+        result.detector: result
+        for result in results
+    }
+
+    assert by_detector["adwin"].total_alarms == 0
+    assert by_detector["adwin"].missed_detection is True
+
+    assert by_detector["ddm"].total_alarms == 0
+    assert by_detector["ddm"].missed_detection is True
