@@ -54,6 +54,43 @@ def generate_dashboard(
     batches = sorted(ordered["batch"].unique())
     models = sorted(ordered["model"].unique())
 
+    # Dynamically zoom the y-axis around the observed metric values.
+    metric_values = pd.to_numeric(
+        ordered[metric],
+        errors="coerce",
+    ).dropna()
+
+    metric_min = float(metric_values.min())
+    metric_max = float(metric_values.max())
+
+    metric_span = metric_max - metric_min
+
+    padding = max(
+        metric_span * 0.15,
+        0.001,
+    )
+
+    y_min = max(
+        0.0,
+        metric_min - padding,
+    )
+
+    y_max = min(
+        1.0,
+        metric_max + padding,
+    )
+
+    # Avoid a zero-height axis if every metric value is identical.
+    if y_min >= y_max:
+        y_min = max(
+            0.0,
+            metric_min - 0.001,
+        )
+        y_max = min(
+            1.0,
+            metric_max + 0.001,
+        )
+
     figure = go.Figure()
 
     first_batch = batches[0]
@@ -277,7 +314,10 @@ def generate_dashboard(
         },
         yaxis={
             "title": metric.upper(),
-            "range": [0.0, 1.05],
+            "range": [
+                y_min,
+                y_max,
+            ],
         },
         hovermode="x unified",
         legend={
