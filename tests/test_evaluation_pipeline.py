@@ -87,11 +87,26 @@ def test_generate_evaluation_outputs(tmp_path) -> None:
         "phase_summary",
         "model_summary",
         "detector_quality",
+        "relative_performance_loss",
         "model_comparison_figure",
+    
+        "f1_timeline_figure",
+        "precision_timeline_figure",
+        "recall_timeline_figure",
+        "fpr_timeline_figure",
+        "roc_auc_timeline_figure",
+        "pr_auc_timeline_figure",
+        "precision_at_100_timeline_figure",
+    
         "drift_timeline_figure",
+        "f1_dashboard",
+        "precision_dashboard",
+        "recall_dashboard",
+        "fpr_dashboard",
+        "roc_auc_dashboard",
+        "pr_auc_dashboard",
         "dashboard",
     }
-
     for path in paths.values():
         assert path.exists()
 

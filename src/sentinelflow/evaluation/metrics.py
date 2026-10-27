@@ -14,6 +14,8 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 
+PRECISION_AT_K = 100
+
 
 @dataclass(frozen=True)
 class MetricResult:
@@ -29,6 +31,55 @@ class MetricResult:
     fpr: float
     roc_auc: float
     pr_auc: float
+    precision_at_100: float
+
+
+def precision_at_k(
+    y_true: np.ndarray,
+    probabilities: np.ndarray,
+    *,
+    k: int = PRECISION_AT_K,
+) -> float:
+    """Return fraud precision among the k highest-scored transactions."""
+
+    y_true = np.asarray(y_true)
+    probabilities = np.asarray(probabilities)
+
+    if y_true.ndim != 1 or probabilities.ndim != 1:
+        raise ValueError(
+            "y_true and probabilities must be one-dimensional."
+        )
+
+    if len(y_true) != len(probabilities):
+        raise ValueError(
+            "y_true and probabilities must have the same length."
+        )
+
+    if len(y_true) == 0:
+        raise ValueError(
+            "Cannot calculate precision@k for an empty batch."
+        )
+
+    if k <= 0:
+        raise ValueError("k must be greater than zero.")
+
+    effective_k = min(
+        k,
+        len(y_true),
+    )
+
+    # Stable descending sort so tied scores are handled reproducibly.
+    ranked_indices = np.argsort(
+        -probabilities,
+        kind="stable",
+    )
+
+    top_indices = ranked_indices[:effective_k]
+    top_labels = y_true[top_indices]
+
+    return float(
+        np.sum(top_labels == 1) / effective_k
+    )
 
 
 def calculate_metrics(
@@ -42,18 +93,28 @@ def calculate_metrics(
     probabilities = np.asarray(probabilities)
 
     if y_true.ndim != 1 or probabilities.ndim != 1:
-        raise ValueError("y_true and probabilities must be one-dimensional.")
+        raise ValueError(
+            "y_true and probabilities must be one-dimensional."
+        )
 
     if len(y_true) != len(probabilities):
-        raise ValueError("y_true and probabilities must have the same length.")
+        raise ValueError(
+            "y_true and probabilities must have the same length."
+        )
 
     if len(y_true) == 0:
-        raise ValueError("Cannot calculate metrics for an empty batch.")
+        raise ValueError(
+            "Cannot calculate metrics for an empty batch."
+        )
 
     if not 0.0 < threshold < 1.0:
-        raise ValueError("threshold must be between zero and one.")
+        raise ValueError(
+            "threshold must be between zero and one."
+        )
 
-    predicted = (probabilities >= threshold).astype(int)
+    predicted = (
+        probabilities >= threshold
+    ).astype(int)
 
     tn, fp, fn, tp = confusion_matrix(
         y_true,
@@ -66,11 +127,13 @@ def calculate_metrics(
         predicted,
         zero_division=0,
     )
+
     recall = recall_score(
         y_true,
         predicted,
         zero_division=0,
     )
+
     f1 = f1_score(
         y_true,
         predicted,
@@ -78,15 +141,33 @@ def calculate_metrics(
     )
 
     negative_count = tn + fp
-    fpr = fp / negative_count if negative_count else 0.0
+
+    fpr = (
+        fp / negative_count
+        if negative_count
+        else 0.0
+    )
 
     # AUC is undefined when the data contains only one class.
     if len(np.unique(y_true)) < 2:
         roc_auc = float("nan")
         pr_auc = float("nan")
     else:
-        roc_auc = roc_auc_score(y_true, probabilities)
-        pr_auc = average_precision_score(y_true, probabilities)
+        roc_auc = roc_auc_score(
+            y_true,
+            probabilities,
+        )
+
+        pr_auc = average_precision_score(
+            y_true,
+            probabilities,
+        )
+
+    p_at_100 = precision_at_k(
+        y_true,
+        probabilities,
+        k=PRECISION_AT_K,
+    )
 
     return MetricResult(
         tp=int(tp),
@@ -99,12 +180,17 @@ def calculate_metrics(
         fpr=float(fpr),
         roc_auc=float(roc_auc),
         pr_auc=float(pr_auc),
+        precision_at_100=float(p_at_100),
     )
+
 
 class MetricAccumulator:
     """Accumulate labels and probabilities for a combined metric summary."""
 
-    def __init__(self, threshold: float = 0.5) -> None:
+    def __init__(
+        self,
+        threshold: float = 0.5,
+    ) -> None:
         self.threshold = threshold
         self._labels: list[np.ndarray] = []
         self._probabilities: list[np.ndarray] = []
@@ -120,7 +206,9 @@ class MetricAccumulator:
         probabilities = np.asarray(probabilities)
 
         if y_true.ndim != 1 or probabilities.ndim != 1:
-            raise ValueError("y_true and probabilities must be one-dimensional.")
+            raise ValueError(
+                "y_true and probabilities must be one-dimensional."
+            )
 
         if len(y_true) != len(probabilities):
             raise ValueError(
@@ -128,19 +216,33 @@ class MetricAccumulator:
             )
 
         if len(y_true) == 0:
-            raise ValueError("Cannot accumulate an empty batch.")
+            raise ValueError(
+                "Cannot accumulate an empty batch."
+            )
 
-        self._labels.append(y_true.copy())
-        self._probabilities.append(probabilities.copy())
+        self._labels.append(
+            y_true.copy()
+        )
+
+        self._probabilities.append(
+            probabilities.copy()
+        )
 
     def calculate(self) -> MetricResult:
         """Calculate metrics across all accumulated rows."""
 
         if not self._labels:
-            raise ValueError("No evaluation rows have been accumulated.")
+            raise ValueError(
+                "No evaluation rows have been accumulated."
+            )
 
-        y_true = np.concatenate(self._labels)
-        probabilities = np.concatenate(self._probabilities)
+        y_true = np.concatenate(
+            self._labels
+        )
+
+        probabilities = np.concatenate(
+            self._probabilities
+        )
 
         return calculate_metrics(
             y_true,
@@ -152,4 +254,7 @@ class MetricAccumulator:
     def row_count(self) -> int:
         """Return the number of accumulated evaluation rows."""
 
-        return sum(len(labels) for labels in self._labels)
+        return sum(
+            len(labels)
+            for labels in self._labels
+        )
