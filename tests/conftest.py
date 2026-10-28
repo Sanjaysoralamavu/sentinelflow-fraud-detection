@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+
+os.environ.setdefault("MPLBACKEND", "Agg")
 
 import numpy as np
 import pandas as pd
