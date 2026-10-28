@@ -58,6 +58,7 @@ class FeatureManifest:
     category_counts: dict[str, int] = field(default_factory=dict)
     output_features: list[str] = field(default_factory=list)
     fit_rows: int = 0
+    excluded: dict[str, str] = field(default_factory=dict)
 
     @property
     def included(self) -> list[str]:
@@ -85,8 +86,11 @@ def infer_column_roles(
     *,
     max_categories: int = DEFAULT_MAX_CATEGORIES,
     exclude: tuple[str, ...] = (),
+    exclusion_reasons: dict[str, str] | None = None,
 ) -> FeatureManifest:
     """Classify each column of the warm-up frame as numeric, categorical, or dropped."""
+
+    reasons = exclusion_reasons or {}
 
     numeric: list[str] = []
     categorical: list[str] = []
@@ -96,7 +100,10 @@ def infer_column_roles(
     for column in frame.columns:
         series = frame[column]
         if column in exclude:
-            dropped[column] = "excluded by configuration"
+            reason = reasons.get(column)
+            dropped[column] = (
+                f"excluded by configuration: {reason}" if reason else "excluded by configuration"
+            )
         elif pd.api.types.is_bool_dtype(series) or pd.api.types.is_numeric_dtype(series):
             numeric.append(column)
         elif pd.api.types.is_datetime64_any_dtype(series) or isinstance(
@@ -149,6 +156,20 @@ def _passthrough_names(function: Any) -> FunctionTransformer:
     return FunctionTransformer(function, feature_names_out="one-to-one", validate=False)
 
 
+def parse_exclusions(value: Any) -> tuple[tuple[str, ...], dict[str, str]]:
+    """Read ``data.preprocessing.exclude_columns`` as a list or a ``column: reason`` map."""
+
+    if value is None:
+        return (), {}
+    if isinstance(value, dict):
+        columns = tuple(str(column) for column in value)
+        reasons = {str(column): str(reason or "") for column, reason in value.items()}
+        return columns, reasons
+    if isinstance(value, list | tuple):
+        return tuple(str(column) for column in value), {}
+    raise ValueError("data.preprocessing.exclude_columns must be a list or a mapping.")
+
+
 class FraudPreprocessor:
     """Warm-up-fitted, then frozen, feature transformer."""
 
@@ -158,6 +179,7 @@ class FraudPreprocessor:
         target_column: str = "is_fraud",
         identifier_columns: tuple[str, ...] = DEFAULT_IDENTIFIER_COLUMNS,
         exclude_columns: tuple[str, ...] = (),
+        exclusion_reasons: dict[str, str] | None = None,
         max_categories: int = DEFAULT_MAX_CATEGORIES,
         sparse_output: bool = False,
     ) -> None:
@@ -166,6 +188,14 @@ class FraudPreprocessor:
         self.target_column = target_column
         self.identifier_columns = tuple(identifier_columns)
         self.exclude_columns = tuple(exclude_columns)
+        self.exclusion_reasons = dict(exclusion_reasons or {})
+        protected = {target_column, *self.identifier_columns}
+        clash = sorted(protected.intersection(self.exclude_columns))
+        if clash:
+            raise ValueError(
+                "Target and identifier columns are always removed; do not list them in "
+                f"exclude_columns: {', '.join(clash)}"
+            )
         self.max_categories = int(max_categories)
         self.sparse_output = bool(sparse_output)
         self.manifest: FeatureManifest | None = None
@@ -177,10 +207,12 @@ class FraudPreprocessor:
 
         data = config.section("data")
         options = data.get("preprocessing") or {}
+        exclude_columns, exclusion_reasons = parse_exclusions(options.get("exclude_columns"))
         return cls(
             target_column=config.target_column,
             identifier_columns=configured_drop_columns(data),
-            exclude_columns=tuple(options.get("exclude_columns", ())),
+            exclude_columns=exclude_columns,
+            exclusion_reasons=exclusion_reasons,
             max_categories=int(options.get("max_categories", DEFAULT_MAX_CATEGORIES)),
             sparse_output=bool(options.get("sparse_output", False)),
         )
@@ -198,11 +230,21 @@ class FraudPreprocessor:
         if warmup_features.empty:
             raise ValueError("Cannot fit the preprocessor on an empty warm-up frame.")
 
+        unknown = [c for c in self.exclude_columns if c not in warmup_features.columns]
+        if unknown:
+            raise ValueError(
+                "exclude_columns lists columns that are not in the features: " + ", ".join(unknown)
+            )
+
         manifest = infer_column_roles(
             warmup_features,
             max_categories=self.max_categories,
             exclude=self.exclude_columns,
+            exclusion_reasons=self.exclusion_reasons,
         )
+        manifest.excluded = {
+            column: self.exclusion_reasons.get(column, "") for column in self.exclude_columns
+        }
         if not manifest.included:
             raise ValueError("No usable feature columns remain after type inference.")
 
@@ -284,3 +326,41 @@ class FraudPreprocessor:
             raise LeakageError(
                 "Target or identifier columns reached the preprocessor: " + ", ".join(present)
             )
+
+
+def write_feature_manifest(config_path: str | Path, output: str | Path) -> FeatureManifest:
+    """Fit the preprocessor on the configured warm-up window and write its manifest."""
+
+    from sentinelflow.config import load_config
+    from sentinelflow.data.loader import DataSettings, load_warmup_and_stream
+
+    config = load_config(config_path)
+    warmup, _ = load_warmup_and_stream(DataSettings.from_config(config))
+    preprocessor = FraudPreprocessor.from_config(config).fit(warmup.features)
+    assert preprocessor.manifest is not None
+    preprocessor.manifest.write_json(output)
+    return preprocessor.manifest
+
+
+def main(arguments: list[str] | None = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="python -m sentinelflow.data.preprocessing",
+        description="Fit the preprocessor on the warm-up window and write the feature manifest.",
+    )
+    parser.add_argument("--config", type=Path, default=Path("configs/full.yaml"))
+    parser.add_argument("--output", type=Path, required=True)
+    parsed = parser.parse_args(arguments)
+
+    manifest = write_feature_manifest(parsed.config, parsed.output)
+    print(f"warm-up rows: {manifest.fit_rows:,}")
+    print(f"numeric: {len(manifest.numeric)}  categorical: {len(manifest.categorical)}")
+    print(f"output features: {manifest.n_output_features}")
+    print("excluded:", ", ".join(manifest.excluded) or "none")
+    print(f"wrote {parsed.output}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
