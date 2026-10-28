@@ -24,8 +24,7 @@ stream:
   within_batch_shuffle: true
 
 drift:
-  enabled: true
-  # enabled: false
+  enabled: false
   start_fraction: 0.45
   end_fraction: 0.70
   max_intensity: 0.90
