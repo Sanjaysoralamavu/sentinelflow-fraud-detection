@@ -128,7 +128,7 @@ def _run_experiment(arguments: argparse.Namespace) -> int:
         max_evaluation_rows=arguments.max_evaluation_rows,
     )
 
-    output_directory = config.results_path / "metrics" / "experiment"
+    output_directory = config.experiment_output_path
 
     artifact_paths = write_experiment_artifacts(
         result,

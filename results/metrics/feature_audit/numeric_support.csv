@@ -1,0 +1,10 @@
+column,legit_min,legit_max,fraud_min,fraud_max,fraud_rows_outside_legit_range,fraud_only_share
+session_duration_sec,5.199999809265137,1800.0,0.30000001192092896,1800.0,295940,0.524463
+geo_distance_km,0.0,385.5,0.0,8000.0,217820,0.38602
+geo_velocity_kmh,0.0,449.5,0.0,2500.0,216834,0.384272
+cards_on_device_30d,1.0,15.0,1.0,17.0,6929,0.01228
+transaction_amount,0.5,9999.0,0.5,9999.0,0,0.0
+avg_amount_deviation_sigma,0.0,10.0,0.0,10.0,0,0.0
+failed_attempts_before_success,0.0,10.0,0.0,10.0,0,0.0
+account_age_days,0.0,3649.0,0.0,3649.0,0,0.0
+chargeback_history_count,0.0,3.0,0.0,3.0,0,0.0

@@ -27,6 +27,15 @@ class ProjectConfig:
         return self._resolve(self.raw["paths"]["results"])
 
     @property
+    def experiment_output_path(self) -> Path:
+        """Where ``sentinelflow run`` writes artifacts; configurable per experiment."""
+
+        configured = self.raw["paths"].get("experiment_output")
+        if configured:
+            return self._resolve(configured)
+        return self.results_path / "metrics" / "experiment"
+
+    @property
     def seed(self) -> int:
         return int(self.raw["project"]["random_seed"])
 

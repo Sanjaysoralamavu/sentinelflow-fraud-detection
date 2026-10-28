@@ -1,0 +1,7 @@
+config,model,features_in,features_out,excluded,eval_rows,eval_fraud_rate,roc_auc,pr_auc,precision,recall,f1,seconds
+full,static_logistic,31,104,0,500000,0.134542,0.99964,0.998488,0.99685,0.992746,0.994794,17.0
+full,static_random_forest,31,104,0,500000,0.134542,0.999297,0.99768,0.99976,0.992582,0.996158,17.1
+ablation_reduced,static_logistic,23,85,8,500000,0.134542,0.999614,0.998413,0.993395,0.992671,0.993033,13.5
+ablation_reduced,static_random_forest,23,85,8,500000,0.134542,0.999384,0.997887,0.998863,0.992151,0.995496,13.7
+ablation_strict,static_logistic,21,83,10,500000,0.134542,0.999445,0.998059,0.988844,0.992181,0.99051,13.0
+ablation_strict,static_random_forest,21,83,10,500000,0.134542,0.999271,0.997717,0.996756,0.991007,0.993873,13.2
