@@ -8,6 +8,7 @@ from sentinelflow.models.common import (
     DriftEvent,
 )
 
+
 def test_generate_dashboard_creates_html(tmp_path) -> None:
     """Dashboard should create a standalone Plotly HTML file."""
 
@@ -45,6 +46,7 @@ def test_generate_dashboard_creates_html(tmp_path) -> None:
     assert "plotly" in html.lower()
     assert "static_logistic" in html
     assert "adaptive_adwin" in html
+
 
 def test_dashboard_accepts_confirmed_drift_events(tmp_path) -> None:
     """Dashboard should render confirmed detector alarms."""

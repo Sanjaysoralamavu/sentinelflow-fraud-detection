@@ -28,9 +28,7 @@ def calculate_relative_loss(
     """Return relative performance loss after drift."""
 
     if pre_drift == 0.0:
-        raise ValueError(
-            "Pre-drift performance must be nonzero."
-        )
+        raise ValueError("Pre-drift performance must be nonzero.")
 
     return (pre_drift - drifted) / pre_drift
 
@@ -44,12 +42,7 @@ def evaluate_relative_performance_loss(
 
     phase_metrics = recorder.phase_metrics()
 
-    model_names = sorted(
-        {
-            model_name
-            for model_name, _ in phase_metrics
-        }
-    )
+    model_names = sorted({model_name for model_name, _ in phase_metrics})
 
     results: list[RelativePerformanceLoss] = []
 
@@ -73,17 +66,11 @@ def evaluate_relative_performance_loss(
         drifted_metrics = phase_metrics[drifted_key]
 
         if not hasattr(pre_metrics, metric):
-            raise ValueError(
-                f"Unknown evaluation metric: {metric}"
-            )
+            raise ValueError(f"Unknown evaluation metric: {metric}")
 
-        pre_value = float(
-            getattr(pre_metrics, metric)
-        )
+        pre_value = float(getattr(pre_metrics, metric))
 
-        drifted_value = float(
-            getattr(drifted_metrics, metric)
-        )
+        drifted_value = float(getattr(drifted_metrics, metric))
 
         relative_loss = calculate_relative_loss(
             pre_value,

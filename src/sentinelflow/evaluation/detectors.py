@@ -53,17 +53,9 @@ def evaluate_detector(
             observed_detection_delay=None,
         )
 
-    false_alarms = [
-        event
-        for event in confirmed
-        if event.source_batch < drift_start_batch
-    ]
+    false_alarms = [event for event in confirmed if event.source_batch < drift_start_batch]
 
-    post_drift = [
-        event
-        for event in confirmed
-        if event.source_batch >= drift_start_batch
-    ]
+    post_drift = [event for event in confirmed if event.source_batch >= drift_start_batch]
 
     if not post_drift:
         return DetectorQuality(
@@ -89,12 +81,8 @@ def evaluate_detector(
         false_alarms=len(false_alarms),
         post_drift_alarms=len(post_drift),
         missed_detection=False,
-        source_detection_delay=(
-            first_detection.source_batch - drift_start_batch
-        ),
-        observed_detection_delay=(
-            first_detection.observed_batch - drift_start_batch
-        ),
+        source_detection_delay=(first_detection.source_batch - drift_start_batch),
+        observed_detection_delay=(first_detection.observed_batch - drift_start_batch),
     )
 
 
@@ -106,10 +94,7 @@ def evaluate_all_detectors(
 ) -> list[DetectorQuality]:
     """Evaluate all expected detectors and any detectors found in events."""
 
-    detector_pairs = {
-        (event.model, event.detector)
-        for event in events
-    }
+    detector_pairs = {(event.model, event.detector) for event in events}
 
     detector_pairs.update(expected_detectors)
 

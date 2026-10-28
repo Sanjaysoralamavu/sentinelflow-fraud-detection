@@ -22,19 +22,14 @@ from sentinelflow.streaming.label_delay import (
     batch_chunks,
 )
 
-
 EVALUATION_ROWS = 1_500_000
 OUTPUT_DIR = Path("results/feature_diagnostic")
 
 
 def main() -> None:
-    config = load_config(
-        Path("configs/full.yaml")
-    )
+    config = load_config(Path("configs/full.yaml"))
 
-    data_settings = DataSettings.from_config(
-        config
-    )
+    data_settings = DataSettings.from_config(config)
 
     stream_settings = StreamSettings.from_config(
         data=config.section("data"),
@@ -42,36 +37,23 @@ def main() -> None:
         seed=config.seed,
     )
 
-    drift_settings = DriftSettings.from_config(
-        config.section("drift")
-    )
+    drift_settings = DriftSettings.from_config(config.section("drift"))
 
-    maximum_loaded_rows = (
-        config.warmup_rows
-        + EVALUATION_ROWS
-    )
+    maximum_loaded_rows = config.warmup_rows + EVALUATION_ROWS
 
     warmup, evaluation_chunks = load_warmup_and_stream(
         data_settings,
         max_rows=maximum_loaded_rows,
     )
 
-    preprocessor = FraudPreprocessor.from_config(
-        config
-    )
+    preprocessor = FraudPreprocessor.from_config(config)
 
-    preprocessor.fit(
-        warmup.features
-    )
+    preprocessor.fit(warmup.features)
 
     if preprocessor.manifest is None:
-        raise RuntimeError(
-            "Preprocessor did not produce a feature manifest."
-        )
+        raise RuntimeError("Preprocessor did not produce a feature manifest.")
 
-    categorical_columns = list(
-        preprocessor.manifest.categorical
-    )
+    categorical_columns = list(preprocessor.manifest.categorical)
 
     # Drift disabled so we measure the original dataset signal.
     no_drift_settings = DriftSettings(
@@ -83,9 +65,7 @@ def main() -> None:
         shift_scale=drift_settings.shift_scale,
     )
 
-    drift = DriftInjector(
-        no_drift_settings
-    )
+    drift = DriftInjector(no_drift_settings)
 
     batches = batch_chunks(
         chunks=evaluation_chunks,
@@ -104,11 +84,7 @@ def main() -> None:
         if batch.progress >= drift_settings.start_fraction:
             break
 
-        feature_parts.append(
-            batch.features[
-                categorical_columns
-            ].copy()
-        )
+        feature_parts.append(batch.features[categorical_columns].copy())
 
         label_parts.append(
             np.asarray(
@@ -118,18 +94,14 @@ def main() -> None:
         )
 
     if not feature_parts:
-        raise RuntimeError(
-            "No pre-drift evaluation rows were collected."
-        )
+        raise RuntimeError("No pre-drift evaluation rows were collected.")
 
     features = pd.concat(
         feature_parts,
         ignore_index=True,
     )
 
-    labels = np.concatenate(
-        label_parts
-    )
+    labels = np.concatenate(label_parts)
 
     rows: list[dict[str, object]] = []
 
@@ -164,44 +136,25 @@ def main() -> None:
             .reset_index()
         )
 
-        grouped = grouped.sort_values(
-            "fraud_rate"
-        )
+        grouped = grouped.sort_values("fraud_rate")
 
         lowest = grouped.iloc[0]
         highest = grouped.iloc[-1]
 
-        overall_rate = float(
-            frame["is_fraud"].mean()
-        )
+        overall_rate = float(frame["is_fraud"].mean())
 
         rows.append(
             {
                 "feature": column,
                 "category_count": len(grouped),
                 "overall_fraud_rate": overall_rate,
-                "min_fraud_rate": float(
-                    lowest["fraud_rate"]
-                ),
-                "max_fraud_rate": float(
-                    highest["fraud_rate"]
-                ),
-                "fraud_rate_range": float(
-                    highest["fraud_rate"]
-                    - lowest["fraud_rate"]
-                ),
-                "lowest_fraud_category": str(
-                    lowest["value"]
-                ),
-                "highest_fraud_category": str(
-                    highest["value"]
-                ),
-                "lowest_category_rows": int(
-                    lowest["row_count"]
-                ),
-                "highest_category_rows": int(
-                    highest["row_count"]
-                ),
+                "min_fraud_rate": float(lowest["fraud_rate"]),
+                "max_fraud_rate": float(highest["fraud_rate"]),
+                "fraud_rate_range": float(highest["fraud_rate"] - lowest["fraud_rate"]),
+                "lowest_fraud_category": str(lowest["value"]),
+                "highest_fraud_category": str(highest["value"]),
+                "lowest_category_rows": int(lowest["row_count"]),
+                "highest_category_rows": int(highest["row_count"]),
             }
         )
 
@@ -209,18 +162,10 @@ def main() -> None:
             detail_rows.append(
                 {
                     "feature": column,
-                    "category": str(
-                        category["value"]
-                    ),
-                    "row_count": int(
-                        category["row_count"]
-                    ),
-                    "fraud_count": int(
-                        category["fraud_count"]
-                    ),
-                    "fraud_rate": float(
-                        category["fraud_rate"]
-                    ),
+                    "category": str(category["value"]),
+                    "row_count": int(category["row_count"]),
+                    "fraud_count": int(category["fraud_count"]),
+                    "fraud_rate": float(category["fraud_rate"]),
                 }
             )
 
@@ -229,24 +174,16 @@ def main() -> None:
         ascending=False,
     )
 
-    detail = pd.DataFrame(
-        detail_rows
-    )
+    detail = pd.DataFrame(detail_rows)
 
     OUTPUT_DIR.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    summary_path = (
-        OUTPUT_DIR
-        / "categorical_signal_summary.csv"
-    )
+    summary_path = OUTPUT_DIR / "categorical_signal_summary.csv"
 
-    detail_path = (
-        OUTPUT_DIR
-        / "categorical_signal_detail.csv"
-    )
+    detail_path = OUTPUT_DIR / "categorical_signal_detail.csv"
 
     summary.to_csv(
         summary_path,
@@ -258,13 +195,9 @@ def main() -> None:
         index=False,
     )
 
-    print(
-        f"Pre-drift rows analyzed: {len(labels):,}"
-    )
+    print(f"Pre-drift rows analyzed: {len(labels):,}")
 
-    print(
-        f"Overall fraud rate: {labels.mean():.6f}"
-    )
+    print(f"Overall fraud rate: {labels.mean():.6f}")
 
     print()
     print("=== Strongest categorical signals ===")

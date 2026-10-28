@@ -30,7 +30,7 @@ class MetricResult:
     f1: float
     fpr: float
     roc_auc: float
-    pr_auc: float
+    average_precision: float
     precision_at_100: float
 
 
@@ -46,19 +46,13 @@ def precision_at_k(
     probabilities = np.asarray(probabilities)
 
     if y_true.ndim != 1 or probabilities.ndim != 1:
-        raise ValueError(
-            "y_true and probabilities must be one-dimensional."
-        )
+        raise ValueError("y_true and probabilities must be one-dimensional.")
 
     if len(y_true) != len(probabilities):
-        raise ValueError(
-            "y_true and probabilities must have the same length."
-        )
+        raise ValueError("y_true and probabilities must have the same length.")
 
     if len(y_true) == 0:
-        raise ValueError(
-            "Cannot calculate precision@k for an empty batch."
-        )
+        raise ValueError("Cannot calculate precision@k for an empty batch.")
 
     if k <= 0:
         raise ValueError("k must be greater than zero.")
@@ -77,9 +71,7 @@ def precision_at_k(
     top_indices = ranked_indices[:effective_k]
     top_labels = y_true[top_indices]
 
-    return float(
-        np.sum(top_labels == 1) / effective_k
-    )
+    return float(np.sum(top_labels == 1) / effective_k)
 
 
 def calculate_metrics(
@@ -93,28 +85,18 @@ def calculate_metrics(
     probabilities = np.asarray(probabilities)
 
     if y_true.ndim != 1 or probabilities.ndim != 1:
-        raise ValueError(
-            "y_true and probabilities must be one-dimensional."
-        )
+        raise ValueError("y_true and probabilities must be one-dimensional.")
 
     if len(y_true) != len(probabilities):
-        raise ValueError(
-            "y_true and probabilities must have the same length."
-        )
+        raise ValueError("y_true and probabilities must have the same length.")
 
     if len(y_true) == 0:
-        raise ValueError(
-            "Cannot calculate metrics for an empty batch."
-        )
+        raise ValueError("Cannot calculate metrics for an empty batch.")
 
     if not 0.0 < threshold < 1.0:
-        raise ValueError(
-            "threshold must be between zero and one."
-        )
+        raise ValueError("threshold must be between zero and one.")
 
-    predicted = (
-        probabilities >= threshold
-    ).astype(int)
+    predicted = (probabilities >= threshold).astype(int)
 
     tn, fp, fn, tp = confusion_matrix(
         y_true,
@@ -142,23 +124,19 @@ def calculate_metrics(
 
     negative_count = tn + fp
 
-    fpr = (
-        fp / negative_count
-        if negative_count
-        else 0.0
-    )
+    fpr = fp / negative_count if negative_count else 0.0
 
     # AUC is undefined when the data contains only one class.
     if len(np.unique(y_true)) < 2:
         roc_auc = float("nan")
-        pr_auc = float("nan")
+        average_precision = float("nan")
     else:
         roc_auc = roc_auc_score(
             y_true,
             probabilities,
         )
 
-        pr_auc = average_precision_score(
+        average_precision = average_precision_score(
             y_true,
             probabilities,
         )
@@ -179,7 +157,7 @@ def calculate_metrics(
         f1=float(f1),
         fpr=float(fpr),
         roc_auc=float(roc_auc),
-        pr_auc=float(pr_auc),
+        average_precision=float(average_precision),
         precision_at_100=float(p_at_100),
     )
 
@@ -206,43 +184,27 @@ class MetricAccumulator:
         probabilities = np.asarray(probabilities)
 
         if y_true.ndim != 1 or probabilities.ndim != 1:
-            raise ValueError(
-                "y_true and probabilities must be one-dimensional."
-            )
+            raise ValueError("y_true and probabilities must be one-dimensional.")
 
         if len(y_true) != len(probabilities):
-            raise ValueError(
-                "y_true and probabilities must have the same length."
-            )
+            raise ValueError("y_true and probabilities must have the same length.")
 
         if len(y_true) == 0:
-            raise ValueError(
-                "Cannot accumulate an empty batch."
-            )
+            raise ValueError("Cannot accumulate an empty batch.")
 
-        self._labels.append(
-            y_true.copy()
-        )
+        self._labels.append(y_true.copy())
 
-        self._probabilities.append(
-            probabilities.copy()
-        )
+        self._probabilities.append(probabilities.copy())
 
     def calculate(self) -> MetricResult:
         """Calculate metrics across all accumulated rows."""
 
         if not self._labels:
-            raise ValueError(
-                "No evaluation rows have been accumulated."
-            )
+            raise ValueError("No evaluation rows have been accumulated.")
 
-        y_true = np.concatenate(
-            self._labels
-        )
+        y_true = np.concatenate(self._labels)
 
-        probabilities = np.concatenate(
-            self._probabilities
-        )
+        probabilities = np.concatenate(self._probabilities)
 
         return calculate_metrics(
             y_true,
@@ -254,7 +216,4 @@ class MetricAccumulator:
     def row_count(self) -> int:
         """Return the number of accumulated evaluation rows."""
 
-        return sum(
-            len(labels)
-            for labels in self._labels
-        )
+        return sum(len(labels) for labels in self._labels)

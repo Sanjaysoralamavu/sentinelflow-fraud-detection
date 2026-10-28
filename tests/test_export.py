@@ -3,13 +3,6 @@
 import numpy as np
 import pandas as pd
 
-from sentinelflow.evaluation.export import (
-    export_batch_metrics,
-    export_model_summary,
-    export_phase_summary,
-)
-from sentinelflow.evaluation.recorder import EvaluationRecorder
-from sentinelflow.streaming.contracts import Batch
 from sentinelflow.evaluation.detectors import DetectorQuality
 from sentinelflow.evaluation.export import (
     export_batch_metrics,
@@ -17,6 +10,8 @@ from sentinelflow.evaluation.export import (
     export_model_summary,
     export_phase_summary,
 )
+from sentinelflow.evaluation.recorder import EvaluationRecorder
+from sentinelflow.streaming.contracts import Batch
 
 
 def test_evaluation_csv_exports(tmp_path) -> None:
@@ -54,8 +49,8 @@ def test_evaluation_csv_exports(tmp_path) -> None:
         tmp_path / "model_summary.csv",
     )
     phase_path = export_phase_summary(
-    recorder,
-    tmp_path / "phase_summary.csv",
+        recorder,
+        tmp_path / "phase_summary.csv",
     )
 
     assert batch_path.exists()
@@ -89,14 +84,13 @@ def test_evaluation_csv_exports(tmp_path) -> None:
         "pre_drift",
     }
 
-    model_b = summary_frame.loc[
-        summary_frame["model"] == "model_b"
-    ].iloc[0]
+    model_b = summary_frame.loc[summary_frame["model"] == "model_b"].iloc[0]
 
     assert model_b["tp"] == 2
     assert model_b["tn"] == 2
     assert model_b["fp"] == 0
     assert model_b["fn"] == 0
+
 
 def test_detector_quality_export(tmp_path) -> None:
     """Detector-quality summaries should be exported to CSV."""
@@ -139,9 +133,7 @@ def test_detector_quality_export(tmp_path) -> None:
         "ddm",
     }
 
-    adwin = frame.loc[
-        frame["detector"] == "adwin"
-    ].iloc[0]
+    adwin = frame.loc[frame["detector"] == "adwin"].iloc[0]
 
     assert adwin["total_alarms"] == 3
     assert adwin["false_alarms"] == 1

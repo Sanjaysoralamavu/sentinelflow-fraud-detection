@@ -125,6 +125,7 @@ def test_no_drift_treats_every_confirmed_alarm_as_false() -> None:
     assert result.source_detection_delay is None
     assert result.observed_detection_delay is None
 
+
 def test_suppressed_signals_are_not_counted_as_confirmed_alarms() -> None:
     """Grace and cooldown signals should not count as confirmed alarms."""
 
@@ -170,6 +171,7 @@ def test_suppressed_signals_are_not_counted_as_confirmed_alarms() -> None:
     assert result.source_detection_delay == 10
     assert result.observed_detection_delay == 17
 
+
 def test_evaluate_all_detectors_builds_one_summary_per_detector() -> None:
     """All detector models should receive their own quality summary."""
 
@@ -198,16 +200,14 @@ def test_evaluate_all_detectors_builds_one_summary_per_detector() -> None:
 
     assert len(results) == 2
 
-    by_detector = {
-        result.detector: result
-        for result in results
-    }
+    by_detector = {result.detector: result for result in results}
 
     assert by_detector["adwin"].source_detection_delay == 7
     assert by_detector["adwin"].observed_detection_delay == 14
 
     assert by_detector["ddm"].source_detection_delay == 9
     assert by_detector["ddm"].observed_detection_delay == 16
+
 
 def test_evaluate_all_detectors_reports_silent_detector() -> None:
     """Expected detectors with no events should count as missed detections."""
@@ -223,10 +223,7 @@ def test_evaluate_all_detectors_reports_silent_detector() -> None:
 
     assert len(results) == 2
 
-    by_detector = {
-        result.detector: result
-        for result in results
-    }
+    by_detector = {result.detector: result for result in results}
 
     assert by_detector["adwin"].total_alarms == 0
     assert by_detector["adwin"].missed_detection is True

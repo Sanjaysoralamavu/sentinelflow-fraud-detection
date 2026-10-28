@@ -22,7 +22,6 @@ from sentinelflow.streaming.label_delay import (
     batch_chunks,
 )
 
-
 EVALUATION_ROWS = 1_500_000
 OUTPUT_DIR = Path("results/drift_diagnostic")
 
@@ -45,27 +44,18 @@ def standardized_mean_difference(
     legitimate_var = float(np.var(legitimate, ddof=0))
     fraud_var = float(np.var(fraud, ddof=0))
 
-    pooled_std = np.sqrt(
-        (legitimate_var + fraud_var) / 2.0
-    )
+    pooled_std = np.sqrt((legitimate_var + fraud_var) / 2.0)
 
     if pooled_std == 0.0:
         return 0.0
 
-    return abs(
-        float(np.mean(fraud))
-        - float(np.mean(legitimate))
-    ) / pooled_std
+    return abs(float(np.mean(fraud)) - float(np.mean(legitimate))) / pooled_std
 
 
 def main() -> None:
-    config = load_config(
-        Path("configs/full.yaml")
-    )
+    config = load_config(Path("configs/full.yaml"))
 
-    data_settings = DataSettings.from_config(
-        config
-    )
+    data_settings = DataSettings.from_config(config)
 
     stream_settings = StreamSettings.from_config(
         data=config.section("data"),
@@ -73,43 +63,26 @@ def main() -> None:
         seed=config.seed,
     )
 
-    drift_settings = DriftSettings.from_config(
-        config.section("drift")
-    )
+    drift_settings = DriftSettings.from_config(config.section("drift"))
 
-    maximum_loaded_rows = (
-        config.warmup_rows
-        + EVALUATION_ROWS
-    )
+    maximum_loaded_rows = config.warmup_rows + EVALUATION_ROWS
 
-    warmup, evaluation_chunks = (
-        load_warmup_and_stream(
-            data_settings,
-            max_rows=maximum_loaded_rows,
-        )
+    warmup, evaluation_chunks = load_warmup_and_stream(
+        data_settings,
+        max_rows=maximum_loaded_rows,
     )
 
     # Fit preprocessing exactly as the real experiment does.
-    preprocessor = FraudPreprocessor.from_config(
-        config
-    )
+    preprocessor = FraudPreprocessor.from_config(config)
 
-    preprocessor.fit(
-        warmup.features
-    )
+    preprocessor.fit(warmup.features)
 
     if preprocessor.manifest is None:
-        raise RuntimeError(
-            "Preprocessor did not produce a feature manifest."
-        )
+        raise RuntimeError("Preprocessor did not produce a feature manifest.")
 
-    numeric_columns = list(
-        preprocessor.manifest.numeric
-    )
+    numeric_columns = list(preprocessor.manifest.numeric)
 
-    print(
-        f"Numeric features: {len(numeric_columns)}"
-    )
+    print(f"Numeric features: {len(numeric_columns)}")
 
     for column in numeric_columns:
         print(f"  {column}")
@@ -118,9 +91,7 @@ def main() -> None:
     #
     # drift_on reproduces the controlled drift.
     # drift_off keeps exactly the same stream rows unchanged.
-    drift_on = DriftInjector(
-        drift_settings
-    )
+    drift_on = DriftInjector(drift_settings)
 
     no_drift_settings = DriftSettings(
         enabled=False,
@@ -131,9 +102,7 @@ def main() -> None:
         shift_scale=drift_settings.shift_scale,
     )
 
-    drift_off = DriftInjector(
-        no_drift_settings
-    )
+    drift_off = DriftInjector(no_drift_settings)
 
     # Build the no-drift stream first from the same source chunks.
     #
@@ -145,9 +114,7 @@ def main() -> None:
     loaded = 0
 
     for chunk in evaluation_chunks:
-        remaining = (
-            EVALUATION_ROWS - loaded
-        )
+        remaining = EVALUATION_ROWS - loaded
 
         if remaining <= 0:
             break
@@ -157,15 +124,9 @@ def main() -> None:
             remaining,
         )
 
-        raw_parts.append(
-            chunk.features.iloc[:take].copy()
-        )
+        raw_parts.append(chunk.features.iloc[:take].copy())
 
-        label_parts.append(
-            np.asarray(
-                chunk.labels[:take]
-            ).copy()
-        )
+        label_parts.append(np.asarray(chunk.labels[:take]).copy())
 
         loaded += take
 
@@ -174,14 +135,11 @@ def main() -> None:
         ignore_index=True,
     )
 
-    labels = np.concatenate(
-        label_parts
-    )
+    labels = np.concatenate(label_parts)
 
     if len(raw_features) != EVALUATION_ROWS:
         raise RuntimeError(
-            "Diagnostic did not load the expected "
-            f"{EVALUATION_ROWS} evaluation rows."
+            f"Diagnostic did not load the expected {EVALUATION_ROWS} evaluation rows."
         )
 
     # Recreate identical batches twice:
@@ -190,9 +148,7 @@ def main() -> None:
 
     diagnostic_chunk = CNPChunk(
         row_group=-1,
-        cnp_rows=np.arange(
-            EVALUATION_ROWS
-        ),
+        cnp_rows=np.arange(EVALUATION_ROWS),
         features=raw_features,
         labels=labels,
     )
@@ -216,10 +172,7 @@ def main() -> None:
     )
 
     if len(control_batches) != len(drifted_batches):
-        raise RuntimeError(
-            "Control and drifted streams produced "
-            "different batch counts."
-        )
+        raise RuntimeError("Control and drifted streams produced different batch counts.")
 
     rows: list[dict[str, object]] = []
 
@@ -232,51 +185,27 @@ def main() -> None:
             control.labels,
             drifted.labels,
         ):
-            raise RuntimeError(
-                "Control and drifted labels are not aligned."
-            )
+            raise RuntimeError("Control and drifted labels are not aligned.")
 
         labels_batch = control.labels
 
-        legitimate_mask = (
-            labels_batch == 0
-        )
+        legitimate_mask = labels_batch == 0
 
-        fraud_mask = (
-            labels_batch == 1
-        )
+        fraud_mask = labels_batch == 1
 
         for column in numeric_columns:
-            control_values = (
-                control.features[column]
-                .to_numpy(dtype=float)
+            control_values = control.features[column].to_numpy(dtype=float)
+
+            drifted_values = drifted.features[column].to_numpy(dtype=float)
+
+            control_separation = standardized_mean_difference(
+                control_values[legitimate_mask],
+                control_values[fraud_mask],
             )
 
-            drifted_values = (
-                drifted.features[column]
-                .to_numpy(dtype=float)
-            )
-
-            control_separation = (
-                standardized_mean_difference(
-                    control_values[
-                        legitimate_mask
-                    ],
-                    control_values[
-                        fraud_mask
-                    ],
-                )
-            )
-
-            drifted_separation = (
-                standardized_mean_difference(
-                    drifted_values[
-                        legitimate_mask
-                    ],
-                    drifted_values[
-                        fraud_mask
-                    ],
-                )
+            drifted_separation = standardized_mean_difference(
+                drifted_values[legitimate_mask],
+                drifted_values[fraud_mask],
             )
 
             rows.append(
@@ -284,40 +213,30 @@ def main() -> None:
                     "batch": control.batch_id,
                     "phase": drifted.phase,
                     "feature": column,
-                    "control_separation": (
-                        control_separation
-                    ),
-                    "drifted_separation": (
-                        drifted_separation
-                    ),
-                    "separation_change": (
-                        drifted_separation
-                        - control_separation
-                    ),
+                    "control_separation": (control_separation),
+                    "drifted_separation": (drifted_separation),
+                    "separation_change": (drifted_separation - control_separation),
                 }
             )
 
     detail = pd.DataFrame(rows)
 
-    summary = (
-        detail.groupby(
-            ["phase", "feature"],
-            as_index=False,
-        )
-        .agg(
-            control_separation=(
-                "control_separation",
-                "mean",
-            ),
-            drifted_separation=(
-                "drifted_separation",
-                "mean",
-            ),
-            separation_change=(
-                "separation_change",
-                "mean",
-            ),
-        )
+    summary = detail.groupby(
+        ["phase", "feature"],
+        as_index=False,
+    ).agg(
+        control_separation=(
+            "control_separation",
+            "mean",
+        ),
+        drifted_separation=(
+            "drifted_separation",
+            "mean",
+        ),
+        separation_change=(
+            "separation_change",
+            "mean",
+        ),
     )
 
     OUTPUT_DIR.mkdir(
@@ -325,15 +244,9 @@ def main() -> None:
         exist_ok=True,
     )
 
-    detail_path = (
-        OUTPUT_DIR
-        / "feature_separation_by_batch.csv"
-    )
+    detail_path = OUTPUT_DIR / "feature_separation_by_batch.csv"
 
-    summary_path = (
-        OUTPUT_DIR
-        / "feature_separation_summary.csv"
-    )
+    summary_path = OUTPUT_DIR / "feature_separation_summary.csv"
 
     detail.to_csv(
         detail_path,
@@ -348,30 +261,17 @@ def main() -> None:
     print()
     print("=== Drifted phase ===")
 
-    drifted_summary = (
-        summary[
-            summary["phase"] == "drifted"
-        ]
-        .sort_values(
-            "separation_change",
-            ascending=False,
-        )
+    drifted_summary = summary[summary["phase"] == "drifted"].sort_values(
+        "separation_change",
+        ascending=False,
     )
 
-    print(
-        drifted_summary.to_string(
-            index=False
-        )
-    )
+    print(drifted_summary.to_string(index=False))
 
     print()
-    print(
-        f"Saved: {detail_path}"
-    )
+    print(f"Saved: {detail_path}")
 
-    print(
-        f"Saved: {summary_path}"
-    )
+    print(f"Saved: {summary_path}")
 
 
 if __name__ == "__main__":

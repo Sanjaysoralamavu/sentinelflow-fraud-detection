@@ -37,9 +37,7 @@ def test_generate_evaluation_outputs(tmp_path) -> None:
     recorder.record(
         batch,
         {
-            "adaptive_adwin": np.array(
-                [0.9, 0.8, 0.2, 0.1]
-            ),
+            "adaptive_adwin": np.array([0.9, 0.8, 0.2, 0.1]),
         },
     )
 
@@ -89,30 +87,26 @@ def test_generate_evaluation_outputs(tmp_path) -> None:
         "detector_quality",
         "relative_performance_loss",
         "model_comparison_figure",
-    
         "f1_timeline_figure",
         "precision_timeline_figure",
         "recall_timeline_figure",
         "fpr_timeline_figure",
         "roc_auc_timeline_figure",
-        "pr_auc_timeline_figure",
+        "average_precision_timeline_figure",
         "precision_at_100_timeline_figure",
-    
         "drift_timeline_figure",
         "f1_dashboard",
         "precision_dashboard",
         "recall_dashboard",
         "fpr_dashboard",
         "roc_auc_dashboard",
-        "pr_auc_dashboard",
+        "average_precision_dashboard",
         "dashboard",
     }
     for path in paths.values():
         assert path.exists()
 
-    detector_frame = pd.read_csv(
-        paths["detector_quality"]
-    )
+    detector_frame = pd.read_csv(paths["detector_quality"])
 
     assert len(detector_frame) == 2
 
@@ -121,18 +115,14 @@ def test_generate_evaluation_outputs(tmp_path) -> None:
         "ddm",
     }
 
-    adwin = detector_frame[
-        detector_frame["detector"] == "adwin"
-    ].iloc[0]
+    adwin = detector_frame[detector_frame["detector"] == "adwin"].iloc[0]
 
     assert adwin["source_detection_delay"] == 0
     assert adwin["observed_detection_delay"] == 7
-    assert adwin["missed_detection"] == False
+    assert not adwin["missed_detection"]
 
-    ddm = detector_frame[
-        detector_frame["detector"] == "ddm"
-    ].iloc[0]
+    ddm = detector_frame[detector_frame["detector"] == "ddm"].iloc[0]
 
     assert ddm["total_alarms"] == 0
     assert ddm["post_drift_alarms"] == 0
-    assert ddm["missed_detection"] == True
+    assert ddm["missed_detection"]

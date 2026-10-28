@@ -26,14 +26,13 @@ from sentinelflow.evaluation.visualization import (
 )
 from sentinelflow.experiment import ExperimentResult
 
-
 TIMELINE_METRICS = (
     "f1",
     "precision",
     "recall",
     "fpr",
     "roc_auc",
-    "pr_auc",
+    "average_precision",
     "precision_at_100",
 )
 
@@ -42,7 +41,7 @@ RELATIVE_LOSS_METRICS = (
     "precision",
     "recall",
     "roc_auc",
-    "pr_auc",
+    "average_precision",
     "precision_at_100",
 )
 
@@ -52,7 +51,7 @@ DASHBOARD_METRICS = (
     "recall",
     "fpr",
     "roc_auc",
-    "pr_auc",
+    "average_precision",
 )
 
 
@@ -109,25 +108,18 @@ def generate_evaluation_outputs(
         "relative_performance_loss": (
             export_relative_performance_loss(
                 relative_performance_loss,
-                output_dir
-                / "relative_performance_loss.csv",
+                output_dir / "relative_performance_loss.csv",
             )
         ),
     }
 
-    model_summary_frame = pd.read_csv(
-        paths["model_summary"]
-    )
+    model_summary_frame = pd.read_csv(paths["model_summary"])
 
-    batch_metrics_frame = pd.read_csv(
-        paths["batch_metrics"]
-    )
+    batch_metrics_frame = pd.read_csv(paths["batch_metrics"])
 
-    paths["model_comparison_figure"] = (
-        plot_model_comparison(
-            model_summary_frame,
-            output_dir / "model_comparison.png",
-        )
+    paths["model_comparison_figure"] = plot_model_comparison(
+        model_summary_frame,
+        output_dir / "model_comparison.png",
     )
 
     # Generate one batch-level timeline for every evaluation metric.
@@ -143,50 +135,31 @@ def generate_evaluation_outputs(
         )
 
     # Keep the original artifact name for compatibility.
-    paths["drift_timeline_figure"] = paths[
-        "f1_timeline_figure"
-    ]
+    paths["drift_timeline_figure"] = paths["f1_timeline_figure"]
 
     # Generate relative-loss visualization when both pre-drift
     # and fully drifted phases are available.
     if relative_performance_loss:
-        relative_loss_frame = pd.read_csv(
-            paths["relative_performance_loss"]
-        )
+        relative_loss_frame = pd.read_csv(paths["relative_performance_loss"])
 
-        paths["relative_performance_loss_figure"] = (
-            plot_relative_performance_loss(
-                relative_loss_frame,
-                output_dir
-                / "relative_performance_loss.png",
-            )
+        paths["relative_performance_loss_figure"] = plot_relative_performance_loss(
+            relative_loss_frame,
+            output_dir / "relative_performance_loss.png",
         )
 
     # Generate interactive replay dashboards.
     for metric in DASHBOARD_METRICS:
-        dashboard_name = (
-            "index.html"
-            if metric == "f1"
-            else f"{metric}.html"
-        )
+        dashboard_name = "index.html" if metric == "f1" else f"{metric}.html"
 
-        paths[f"{metric}_dashboard"] = (
-            generate_dashboard(
-                batch_metrics_frame,
-                output_dir
-                / "dashboard"
-                / dashboard_name,
-                metric=metric,
-                drift_start_batch=(
-                    recorder.drift_start_batch
-                ),
-                drift_events=result.drift_events,
-            )
+        paths[f"{metric}_dashboard"] = generate_dashboard(
+            batch_metrics_frame,
+            output_dir / "dashboard" / dashboard_name,
+            metric=metric,
+            drift_start_batch=(recorder.drift_start_batch),
+            drift_events=result.drift_events,
         )
 
     # Keep the original dashboard artifact name for compatibility.
-    paths["dashboard"] = paths[
-        "f1_dashboard"
-    ]
+    paths["dashboard"] = paths["f1_dashboard"]
 
     return paths

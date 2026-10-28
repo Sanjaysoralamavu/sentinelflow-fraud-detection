@@ -33,7 +33,7 @@ def test_calculate_metrics_matches_hand_computed_example() -> None:
     assert result.fpr == pytest.approx(0.5)
 
     assert result.roc_auc == pytest.approx(0.75)
-    assert result.pr_auc == pytest.approx(0.833333333)
+    assert result.average_precision == pytest.approx(0.833333333)
 
     # There are fewer than 100 rows, so all four rows are used.
     assert result.precision_at_100 == pytest.approx(0.5)
@@ -42,13 +42,9 @@ def test_calculate_metrics_matches_hand_computed_example() -> None:
 def test_precision_at_k_uses_highest_scored_transactions() -> None:
     """Precision@k should use only the k highest fraud scores."""
 
-    y_true = np.array(
-        [1, 0, 1, 0, 1, 0]
-    )
+    y_true = np.array([1, 0, 1, 0, 1, 0])
 
-    probabilities = np.array(
-        [0.95, 0.90, 0.85, 0.80, 0.75, 0.10]
-    )
+    probabilities = np.array([0.95, 0.90, 0.85, 0.80, 0.75, 0.10])
 
     result = precision_at_k(
         y_true,
@@ -63,13 +59,9 @@ def test_precision_at_k_uses_highest_scored_transactions() -> None:
 def test_precision_at_k_uses_all_rows_when_fewer_than_k() -> None:
     """Precision@k should use all rows when fewer than k are available."""
 
-    y_true = np.array(
-        [1, 0, 1, 1]
-    )
+    y_true = np.array([1, 0, 1, 1])
 
-    probabilities = np.array(
-        [0.9, 0.8, 0.7, 0.6]
-    )
+    probabilities = np.array([0.9, 0.8, 0.7, 0.6])
 
     result = precision_at_k(
         y_true,
@@ -99,7 +91,7 @@ def test_calculate_metrics_handles_single_class_batch() -> None:
     assert result.fpr == pytest.approx(0.0)
 
     assert np.isnan(result.roc_auc)
-    assert np.isnan(result.pr_auc)
+    assert np.isnan(result.average_precision)
     assert result.precision_at_100 == pytest.approx(0.0)
 
 

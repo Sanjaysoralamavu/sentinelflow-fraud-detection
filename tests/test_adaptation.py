@@ -26,9 +26,7 @@ def test_relative_loss_when_performance_improves() -> None:
         drifted=0.95,
     )
 
-    assert result == pytest.approx(
-        (0.90 - 0.95) / 0.90
-    )
+    assert result == pytest.approx((0.90 - 0.95) / 0.90)
 
 
 def test_relative_loss_when_performance_is_unchanged() -> None:

@@ -69,31 +69,25 @@ def plot_model_comparison(
         "precision",
         "recall",
         "f1",
-        "pr_auc",
+        "average_precision",
         "roc_auc",
     }
 
-    missing = required_columns.difference(
-        model_summary.columns
-    )
+    missing = required_columns.difference(model_summary.columns)
 
     if missing:
         names = ", ".join(sorted(missing))
-        raise ValueError(
-            f"Model summary is missing required columns: {names}"
-        )
+        raise ValueError(f"Model summary is missing required columns: {names}")
 
     if model_summary.empty:
-        raise ValueError(
-            "Model summary cannot be empty."
-        )
+        raise ValueError("Model summary cannot be empty.")
 
     plot_frame = model_summary.set_index("model")[
         [
             "precision",
             "recall",
             "f1",
-            "pr_auc",
+            "average_precision",
             "roc_auc",
         ]
     ]
@@ -108,9 +102,7 @@ def plot_model_comparison(
         figsize=(12, 6),
     )
 
-    axis.set_title(
-        "Overall Model Performance"
-    )
+    axis.set_title("Overall Model Performance")
     axis.set_xlabel("Model")
     axis.set_ylabel("Score")
     axis.set_ylim(0.0, 1.05)
@@ -155,36 +147,24 @@ def plot_drift_timeline(
         metric,
     }
 
-    missing = required_columns.difference(
-        batch_metrics.columns
-    )
+    missing = required_columns.difference(batch_metrics.columns)
 
     if missing:
         names = ", ".join(sorted(missing))
-        raise ValueError(
-            f"Batch metrics are missing required columns: {names}"
-        )
+        raise ValueError(f"Batch metrics are missing required columns: {names}")
 
     if batch_metrics.empty:
-        raise ValueError(
-            "Batch metrics cannot be empty."
-        )
+        raise ValueError("Batch metrics cannot be empty.")
 
     output_path.parent.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    figure, axis = plt.subplots(
-        figsize=(12, 6)
-    )
+    figure, axis = plt.subplots(figsize=(12, 6))
 
-    for model_name, frame in batch_metrics.groupby(
-        "model"
-    ):
-        ordered = frame.sort_values(
-            "batch"
-        )
+    for model_name, frame in batch_metrics.groupby("model"):
+        ordered = frame.sort_values("batch")
 
         axis.plot(
             ordered["batch"],
@@ -199,11 +179,7 @@ def plot_drift_timeline(
             label="Drift start",
         )
 
-    confirmed_events = [
-        event
-        for event in drift_events
-        if event.alarm_state == ALARM_CONFIRMED
-    ]
+    confirmed_events = [event for event in drift_events if event.alarm_state == ALARM_CONFIRMED]
 
     labelled_detectors: set[str] = set()
 
@@ -211,12 +187,8 @@ def plot_drift_timeline(
         label = None
 
         if event.detector not in labelled_detectors:
-            label = (
-                f"{event.detector.upper()} alarm"
-            )
-            labelled_detectors.add(
-                event.detector
-            )
+            label = f"{event.detector.upper()} alarm"
+            labelled_detectors.add(event.detector)
 
         axis.axvline(
             event.source_batch,
@@ -225,19 +197,13 @@ def plot_drift_timeline(
             label=label,
         )
 
-    lower, upper = _metric_axis_limits(
-        batch_metrics[metric]
-    )
+    lower, upper = _metric_axis_limits(batch_metrics[metric])
 
     display_name = (
-        "Precision@100"
-        if metric == "precision_at_100"
-        else metric.replace("_", "-").upper()
+        "Precision@100" if metric == "precision_at_100" else metric.replace("_", "-").upper()
     )
 
-    axis.set_title(
-        f"{display_name} Across Evaluation Batches"
-    )
+    axis.set_title(f"{display_name} Across Evaluation Batches")
 
     axis.set_xlabel("Batch")
     axis.set_ylabel(display_name)
@@ -263,6 +229,7 @@ def plot_drift_timeline(
 
     return output_path
 
+
 def plot_relative_performance_loss(
     relative_loss: pd.DataFrame,
     output_path: Path,
@@ -277,21 +244,14 @@ def plot_relative_performance_loss(
         "relative_loss",
     }
 
-    missing = required_columns.difference(
-        relative_loss.columns
-    )
+    missing = required_columns.difference(relative_loss.columns)
 
     if missing:
         names = ", ".join(sorted(missing))
-        raise ValueError(
-            "Relative performance loss is missing "
-            f"required columns: {names}"
-        )
+        raise ValueError(f"Relative performance loss is missing required columns: {names}")
 
     if relative_loss.empty:
-        raise ValueError(
-            "Relative performance loss cannot be empty."
-        )
+        raise ValueError("Relative performance loss cannot be empty.")
 
     output_path.parent.mkdir(
         parents=True,
@@ -303,37 +263,30 @@ def plot_relative_performance_loss(
         "precision",
         "recall",
         "roc_auc",
-        "pr_auc",
+        "average_precision",
         "precision_at_100",
     ]
 
     available_metrics = [
-        metric
-        for metric in metric_order
-        if metric in set(relative_loss["metric"])
+        metric for metric in metric_order if metric in set(relative_loss["metric"])
     ]
 
-    plot_frame = (
-        relative_loss.pivot(
-            index="model",
-            columns="metric",
-            values="relative_loss",
-        )
-        .reindex(columns=available_metrics)
-    )
+    plot_frame = relative_loss.pivot(
+        index="model",
+        columns="metric",
+        values="relative_loss",
+    ).reindex(columns=available_metrics)
 
     display_names = {
         "f1": "F1",
         "precision": "Precision",
         "recall": "Recall",
         "roc_auc": "ROC-AUC",
-        "pr_auc": "PR-AUC",
+        "average_precision": "Average Precision",
         "precision_at_100": "P@100",
     }
 
-    plot_frame = plot_frame.rename(
-        columns=display_names
-    )
+    plot_frame = plot_frame.rename(columns=display_names)
 
     axis = plot_frame.plot(
         kind="bar",
@@ -345,15 +298,10 @@ def plot_relative_performance_loss(
         linestyle="--",
     )
 
-    axis.set_title(
-        "Relative Performance Loss After Controlled Drift"
-    )
+    axis.set_title("Relative Performance Loss After Controlled Drift")
 
     axis.set_xlabel("Model")
-    axis.set_ylabel(
-        "Relative Loss "
-        "(positive = degradation, negative = improvement)"
-    )
+    axis.set_ylabel("Relative Loss (positive = degradation, negative = improvement)")
 
     axis.legend(
         title="Metric",

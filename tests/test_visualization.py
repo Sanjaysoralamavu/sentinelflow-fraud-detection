@@ -3,9 +3,6 @@
 import pandas as pd
 
 from sentinelflow.evaluation.visualization import (
-    plot_model_comparison,
-)
-from sentinelflow.evaluation.visualization import (
     plot_drift_timeline,
     plot_model_comparison,
 )
@@ -23,7 +20,7 @@ def test_plot_model_comparison_creates_figure(tmp_path) -> None:
             "precision": [0.80, 0.90],
             "recall": [0.70, 0.88],
             "f1": [0.75, 0.89],
-            "pr_auc": [0.82, 0.93],
+            "average_precision": [0.82, 0.93],
             "roc_auc": [0.86, 0.95],
         }
     )
@@ -35,6 +32,7 @@ def test_plot_model_comparison_creates_figure(tmp_path) -> None:
 
     assert output_path.exists()
     assert output_path.stat().st_size > 0
+
 
 def test_plot_drift_timeline_creates_figure(tmp_path) -> None:
     """Drift timeline should plot batch performance and drift start."""

@@ -35,9 +35,7 @@ def generate_dashboard(
 
     if missing:
         names = ", ".join(sorted(missing))
-        raise ValueError(
-            f"Batch metrics are missing required columns: {names}"
-        )
+        raise ValueError(f"Batch metrics are missing required columns: {names}")
 
     if batch_metrics.empty:
         raise ValueError("Batch metrics cannot be empty.")
@@ -47,9 +45,7 @@ def generate_dashboard(
         exist_ok=True,
     )
 
-    ordered = batch_metrics.sort_values(
-        ["batch", "model"]
-    ).copy()
+    ordered = batch_metrics.sort_values(["batch", "model"]).copy()
 
     batches = sorted(ordered["batch"].unique())
     models = sorted(ordered["model"].unique())
@@ -97,10 +93,7 @@ def generate_dashboard(
 
     # Initial state.
     for model_name in models:
-        model_frame = ordered[
-            (ordered["model"] == model_name)
-            & (ordered["batch"] <= first_batch)
-        ]
+        model_frame = ordered[(ordered["model"] == model_name) & (ordered["batch"] <= first_batch)]
 
         figure.add_trace(
             go.Scatter(
@@ -126,8 +119,7 @@ def generate_dashboard(
 
         for model_name in models:
             model_frame = ordered[
-                (ordered["model"] == model_name)
-                & (ordered["batch"] <= current_batch)
+                (ordered["model"] == model_name) & (ordered["batch"] <= current_batch)
             ]
 
             frame_data.append(
@@ -156,11 +148,7 @@ def generate_dashboard(
     figure.frames = frames
 
     # Stream phases.
-    phase_ranges = (
-        ordered.groupby("phase")["batch"]
-        .agg(["min", "max"])
-        .reset_index()
-    )
+    phase_ranges = ordered.groupby("phase")["batch"].agg(["min", "max"]).reset_index()
 
     for _, row in phase_ranges.iterrows():
         figure.add_vrect(
@@ -183,11 +171,7 @@ def generate_dashboard(
         )
 
     # Confirmed detector alarms.
-    confirmed_events = [
-        event
-        for event in drift_events
-        if event.alarm_state == ALARM_CONFIRMED
-    ]
+    confirmed_events = [event for event in drift_events if event.alarm_state == ALARM_CONFIRMED]
 
     labelled_detectors: set[str] = set()
 

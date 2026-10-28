@@ -7,11 +7,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from sentinelflow.evaluation.recorder import EvaluationRecorder
-from sentinelflow.evaluation.detectors import DetectorQuality
 from sentinelflow.evaluation.adaptation import (
     RelativePerformanceLoss,
 )
+from sentinelflow.evaluation.detectors import DetectorQuality
+from sentinelflow.evaluation.recorder import EvaluationRecorder
+
 
 def export_batch_metrics(
     recorder: EvaluationRecorder,
@@ -50,6 +51,7 @@ def export_model_summary(
 
     return output_path
 
+
 def export_phase_summary(
     recorder: EvaluationRecorder,
     output_path: Path,
@@ -74,6 +76,7 @@ def export_phase_summary(
 
     return output_path
 
+
 def export_detector_quality(
     results: list[DetectorQuality],
     output_path: Path,
@@ -88,6 +91,7 @@ def export_detector_quality(
 
     return output_path
 
+
 def export_relative_performance_loss(
     results: list[RelativePerformanceLoss],
     output_path: Path,
@@ -99,10 +103,7 @@ def export_relative_performance_loss(
         exist_ok=True,
     )
 
-    rows = [
-        asdict(result)
-        for result in results
-    ]
+    rows = [asdict(result) for result in results]
 
     frame = pd.DataFrame(rows)
 

@@ -1,5 +1,7 @@
 """Tests for the evaluation prediction recorder."""
+
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -66,6 +68,7 @@ def test_recorder_collects_metrics_for_each_model() -> None:
     assert second["f1"] == pytest.approx(1.0)
     assert second["fpr"] == pytest.approx(0.0)
 
+
 def test_recorder_uses_configured_threshold() -> None:
     """Recorder should use the model threshold from project configuration."""
     config = load_config(Path("configs/full.yaml"))
@@ -73,6 +76,7 @@ def test_recorder_uses_configured_threshold() -> None:
     recorder = EvaluationRecorder.from_config(config)
 
     assert recorder.threshold == pytest.approx(0.5)
+
 
 def test_recorder_builds_phase_and_overall_summaries() -> None:
     """Recorder should combine rows correctly across batches and phases."""
@@ -134,6 +138,7 @@ def test_recorder_builds_phase_and_overall_summaries() -> None:
     assert phases[("model_a", "ramp_drift")].tn == 2
     assert phases[("model_a", "ramp_drift")].fp == 0
 
+
 def make_drift_settings(enabled: bool) -> DriftSettings:
     """Create drift settings for recorder tests."""
 
@@ -144,6 +149,7 @@ def make_drift_settings(enabled: bool) -> DriftSettings:
         max_intensity=0.90,
         random_seed=1543,
     )
+
 
 def test_recorder_identifies_first_nonzero_drift_batch() -> None:
     """First batch with positive injected intensity is ground-truth drift start."""
@@ -182,6 +188,7 @@ def test_recorder_identifies_first_nonzero_drift_batch() -> None:
     recorder.record(first_drift, predictions)
 
     assert recorder.drift_start_batch == 1
+
 
 def test_recorder_has_no_drift_start_when_drift_disabled() -> None:
     """No-drift control should never establish a ground-truth drift start."""

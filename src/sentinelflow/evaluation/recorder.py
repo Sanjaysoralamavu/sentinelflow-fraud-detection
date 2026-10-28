@@ -5,13 +5,14 @@ from __future__ import annotations
 from dataclasses import asdict
 
 import numpy as np
+
 from sentinelflow.config import ProjectConfig
-from sentinelflow.streaming.contracts import Batch
 from sentinelflow.evaluation.metrics import (
     MetricAccumulator,
     MetricResult,
     calculate_metrics,
 )
+from sentinelflow.streaming.contracts import Batch
 from sentinelflow.streaming.drift_injector import (
     DriftSettings,
     drift_intensity,
@@ -36,16 +37,13 @@ class EvaluationRecorder:
             tuple[str, str],
             MetricAccumulator,
         ] = {}
-    
+
     @classmethod
-    
     def from_config(cls, config: ProjectConfig) -> EvaluationRecorder:
         """Create an evaluation recorder from project configuration."""
-            
+
         model_settings = config.section("models")
-        drift_settings = DriftSettings.from_config(
-            config.section("drift")
-        )
+        drift_settings = DriftSettings.from_config(config.section("drift"))
 
         return cls(
             threshold=float(model_settings["threshold"]),
@@ -110,14 +108,10 @@ class EvaluationRecorder:
         """Return metrics over all recorded rows for each model."""
 
         return {
-            model_name: accumulator.calculate()
-            for model_name, accumulator in self._overall.items()
+            model_name: accumulator.calculate() for model_name, accumulator in self._overall.items()
         }
 
     def phase_metrics(self) -> dict[tuple[str, str], MetricResult]:
         """Return metrics over all rows within each model and phase."""
 
-        return {
-            key: accumulator.calculate()
-            for key, accumulator in self._phases.items()
-        }
+        return {key: accumulator.calculate() for key, accumulator in self._phases.items()}
