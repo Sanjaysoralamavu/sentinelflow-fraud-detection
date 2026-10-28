@@ -1,0 +1,92 @@
+# Reduced feature set: flagged near-deterministic features, their numeric sources, and chargeback history.
+# Identical to configs/full.yaml except data.preprocessing.exclude_columns and
+# paths.experiment_output. Excluded columns are still loaded and drifted, then dropped
+# by the preprocessor, so the stream and drift are identical across configurations.
+# Provenance and reasons: docs/FEATURE_AUDIT.md (issue #9).
+
+project:
+  name: SentinelFlow
+  random_seed: 543
+
+paths:
+  dataset: data/raw/credit_card_fraud.parquet
+  results: results
+  experiment_output: results/metrics/experiment/ablation_reduced
+
+data:
+  target_column: is_fraud
+  cnp_column: card_present_cnp
+  cnp_values:
+    - cnp_online
+    - cnp_moto
+  batch_size: 50000
+  warmup_rows: 500000
+  drop_columns:
+    - customer_id
+    - transaction_id
+  preprocessing:
+    exclude_columns:
+      session_duration_bin: >-
+        value bot_speed is 100% fraud on strict CNP
+      session_duration_sec: >-
+        numeric source of session_duration_bin (bot_speed = 0.3-5.0 s); no legitimate row is below 5.2 s
+      geo_velocity_bin: >-
+        value impossible is 100% fraud on strict CNP
+      geo_velocity_kmh: >-
+        numeric source of geo_velocity_bin (impossible > 500 km/h); legitimate maximum is 449.5 km/h
+      geo_distance_bin: >-
+        value long is 100% fraud on strict CNP
+      geo_distance_km: >-
+        numeric source of geo_distance_bin (long >= 600 km); legitimate maximum is 385.5 km
+      merchant_category_vs_history: >-
+        value never_before_category is 99.99% fraud on strict CNP
+      chargeback_history_count: >-
+        requested for review; no predictive signal found (single-column AUC 0.500)
+
+stream:
+  label_delay_batches: 7
+  row_group_shuffle: true
+  within_batch_shuffle: true
+
+drift:
+  enabled: true
+  start_fraction: 0.45
+  end_fraction: 0.70
+  max_intensity: 0.90
+  random_seed: 1543
+
+models:
+  threshold: 0.50
+  positive_weight_cap: 25.0
+
+  random_forest:
+    enabled: true
+    training_rows: 300000
+    n_estimators: 150
+    max_depth: 18
+    min_samples_leaf: 5
+
+  adaptive:
+    detectors:
+      - none
+      - adwin
+      - ddm
+    alpha: 0.0001
+    detector_sample_size: 2000
+    recent_window_rows: 200000
+    adwin_delta: 0.002
+    ddm_warm_start: 30
+    detector_grace_batches: 12
+    detector_cooldown_batches: 20
+
+  online_ensemble:
+    enabled: true
+    n_estimators: 5
+    alpha: 0.0001
+
+evaluation:
+  probability_bins: 2000
+  save_every_batches: 10
+  save_models: true
+  generate_plots: true
+  generate_dashboard: true

@@ -1,0 +1,1382 @@
+{
+  "settings": {
+    "rate_threshold": 0.99,
+    "min_support": 1000,
+    "max_integer_values": 50,
+    "cnp_values": [
+      "cnp_online",
+      "cnp_moto"
+    ]
+  },
+  "rows": 3843653,
+  "fraud_rows": 564272,
+  "fraud_rate": 0.146806,
+  "value_screen": [
+    {
+      "column": "cards_on_device_30d",
+      "value": "16",
+      "rows": 5558,
+      "fraud_rows": 5558,
+      "fraud_rate": 1.0,
+      "share_of_rows": 0.001446,
+      "flag": true
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "17",
+      "rows": 1371,
+      "fraud_rows": 1371,
+      "fraud_rate": 1.0,
+      "share_of_rows": 0.000357,
+      "flag": true
+    },
+    {
+      "column": "geo_distance_bin",
+      "value": "long",
+      "rows": 212944,
+      "fraud_rows": 212944,
+      "fraud_rate": 1.0,
+      "share_of_rows": 0.055401,
+      "flag": true
+    },
+    {
+      "column": "geo_velocity_bin",
+      "value": "impossible",
+      "rows": 212941,
+      "fraud_rows": 212941,
+      "fraud_rate": 1.0,
+      "share_of_rows": 0.055401,
+      "flag": true
+    },
+    {
+      "column": "session_duration_bin",
+      "value": "bot_speed",
+      "rows": 295741,
+      "fraud_rows": 295741,
+      "fraud_rate": 1.0,
+      "share_of_rows": 0.076943,
+      "flag": true
+    },
+    {
+      "column": "failed_attempts_before_success",
+      "value": "6",
+      "rows": 44695,
+      "fraud_rows": 44693,
+      "fraud_rate": 0.999955,
+      "share_of_rows": 0.011628,
+      "flag": true
+    },
+    {
+      "column": "failed_attempts_before_success",
+      "value": "10",
+      "rows": 22315,
+      "fraud_rows": 22314,
+      "fraud_rate": 0.999955,
+      "share_of_rows": 0.005806,
+      "flag": true
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "7",
+      "rows": 37218,
+      "fraud_rows": 37215,
+      "fraud_rate": 0.999919,
+      "share_of_rows": 0.009683,
+      "flag": true
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "8",
+      "rows": 37158,
+      "fraud_rows": 37155,
+      "fraud_rate": 0.999919,
+      "share_of_rows": 0.009667,
+      "flag": true
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "10",
+      "rows": 37309,
+      "fraud_rows": 37305,
+      "fraud_rate": 0.999893,
+      "share_of_rows": 0.009707,
+      "flag": true
+    },
+    {
+      "column": "merchant_category_vs_history",
+      "value": "never_before_category",
+      "rows": 288883,
+      "fraud_rows": 288852,
+      "fraud_rate": 0.999893,
+      "share_of_rows": 0.075158,
+      "flag": true
+    },
+    {
+      "column": "failed_attempts_before_success",
+      "value": "4",
+      "rows": 66920,
+      "fraud_rows": 66912,
+      "fraud_rate": 0.99988,
+      "share_of_rows": 0.017411,
+      "flag": true
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "15",
+      "rows": 37444,
+      "fraud_rows": 37439,
+      "fraud_rate": 0.999866,
+      "share_of_rows": 0.009742,
+      "flag": true
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "14",
+      "rows": 37485,
+      "fraud_rows": 37479,
+      "fraud_rate": 0.99984,
+      "share_of_rows": 0.009752,
+      "flag": true
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "11",
+      "rows": 37544,
+      "fraud_rows": 37537,
+      "fraud_rate": 0.999814,
+      "share_of_rows": 0.009768,
+      "flag": true
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "12",
+      "rows": 37629,
+      "fraud_rows": 37622,
+      "fraud_rate": 0.999814,
+      "share_of_rows": 0.00979,
+      "flag": true
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "9",
+      "rows": 37166,
+      "fraud_rows": 37159,
+      "fraud_rate": 0.999812,
+      "share_of_rows": 0.009669,
+      "flag": true
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "6",
+      "rows": 37558,
+      "fraud_rows": 37550,
+      "fraud_rate": 0.999787,
+      "share_of_rows": 0.009771,
+      "flag": true
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "5",
+      "rows": 37169,
+      "fraud_rows": 37161,
+      "fraud_rate": 0.999785,
+      "share_of_rows": 0.00967,
+      "flag": true
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "13",
+      "rows": 37331,
+      "fraud_rows": 37322,
+      "fraud_rate": 0.999759,
+      "share_of_rows": 0.009712,
+      "flag": true
+    },
+    {
+      "column": "device_fingerprint_match",
+      "value": "known_device",
+      "rows": 2451528,
+      "fraud_rows": 23788,
+      "fraud_rate": 0.009703,
+      "share_of_rows": 0.637812,
+      "flag": true
+    },
+    {
+      "column": "failed_attempts_before_success",
+      "value": "5",
+      "rows": 32626,
+      "fraud_rows": 149,
+      "fraud_rate": 0.004567,
+      "share_of_rows": 0.008488,
+      "flag": true
+    },
+    {
+      "column": "transaction_amount_bin",
+      "value": "very_high",
+      "rows": 53192,
+      "fraud_rows": 46804,
+      "fraud_rate": 0.879907,
+      "share_of_rows": 0.013839,
+      "flag": false
+    },
+    {
+      "column": "device_fingerprint_match",
+      "value": "spoofed",
+      "rows": 224009,
+      "fraud_rows": 191395,
+      "fraud_rate": 0.854408,
+      "share_of_rows": 0.05828,
+      "flag": false
+    },
+    {
+      "column": "ip_address_type",
+      "value": "tor",
+      "rows": 188890,
+      "fraud_rows": 156283,
+      "fraud_rate": 0.827376,
+      "share_of_rows": 0.049143,
+      "flag": false
+    },
+    {
+      "column": "country_consistency",
+      "value": "high_risk_country",
+      "rows": 304572,
+      "fraud_rows": 239405,
+      "fraud_rate": 0.786037,
+      "share_of_rows": 0.07924,
+      "flag": false
+    },
+    {
+      "column": "device_fingerprint_match",
+      "value": "emulator",
+      "rows": 300306,
+      "fraud_rows": 235226,
+      "fraud_rate": 0.783288,
+      "share_of_rows": 0.07813,
+      "flag": false
+    },
+    {
+      "column": "transaction_velocity_1h",
+      "value": "burst_pattern",
+      "rows": 357268,
+      "fraud_rows": 259277,
+      "fraud_rate": 0.725721,
+      "share_of_rows": 0.09295,
+      "flag": false
+    },
+    {
+      "column": "account_credential_change_recency",
+      "value": "changed_within_24h",
+      "rows": 286176,
+      "fraud_rows": 197279,
+      "fraud_rate": 0.689362,
+      "share_of_rows": 0.074454,
+      "flag": false
+    },
+    {
+      "column": "cvv_match_status",
+      "value": "cvv2_mismatch",
+      "rows": 401447,
+      "fraud_rows": 270988,
+      "fraud_rate": 0.675028,
+      "share_of_rows": 0.104444,
+      "flag": false
+    },
+    {
+      "column": "three_ds_auth_result",
+      "value": "challenge_fail",
+      "rows": 300126,
+      "fraud_rows": 202228,
+      "fraud_rate": 0.67381,
+      "share_of_rows": 0.078084,
+      "flag": false
+    },
+    {
+      "column": "geo_distance_bin",
+      "value": "short",
+      "rows": 308033,
+      "fraud_rows": 199997,
+      "fraud_rate": 0.649271,
+      "share_of_rows": 0.080141,
+      "flag": false
+    },
+    {
+      "column": "failed_attempts_before_success",
+      "value": "3",
+      "rows": 166305,
+      "fraud_rows": 101107,
+      "fraud_rate": 0.607961,
+      "share_of_rows": 0.043267,
+      "flag": false
+    },
+    {
+      "column": "merchant_location",
+      "value": "foreign_far",
+      "rows": 400271,
+      "fraud_rows": 236373,
+      "fraud_rate": 0.590532,
+      "share_of_rows": 0.104138,
+      "flag": false
+    },
+    {
+      "column": "cvv_match_status",
+      "value": "not_provided",
+      "rows": 378155,
+      "fraud_rows": 215223,
+      "fraud_rate": 0.56914,
+      "share_of_rows": 0.098384,
+      "flag": false
+    },
+    {
+      "column": "ip_address_type",
+      "value": "proxy",
+      "rows": 300163,
+      "fraud_rows": 169779,
+      "fraud_rate": 0.565623,
+      "share_of_rows": 0.078093,
+      "flag": false
+    },
+    {
+      "column": "transaction_velocity_1h",
+      "value": "5x_baseline",
+      "rows": 373548,
+      "fraud_rows": 210186,
+      "fraud_rate": 0.562675,
+      "share_of_rows": 0.097186,
+      "flag": false
+    },
+    {
+      "column": "merchant_category",
+      "value": "crypto_giftcard",
+      "rows": 260755,
+      "fraud_rows": 145866,
+      "fraud_rate": 0.559399,
+      "share_of_rows": 0.06784,
+      "flag": false
+    },
+    {
+      "column": "network_carrier_type",
+      "value": "datacenter_hosting",
+      "rows": 433033,
+      "fraud_rows": 235226,
+      "fraud_rate": 0.543206,
+      "share_of_rows": 0.112662,
+      "flag": false
+    },
+    {
+      "column": "transaction_amount_bin",
+      "value": "high",
+      "rows": 291747,
+      "fraud_rows": 157968,
+      "fraud_rate": 0.541455,
+      "share_of_rows": 0.075904,
+      "flag": false
+    },
+    {
+      "column": "merchant_risk_score",
+      "value": "very_high_risk",
+      "rows": 549775,
+      "fraud_rows": 287565,
+      "fraud_rate": 0.523059,
+      "share_of_rows": 0.143035,
+      "flag": false
+    },
+    {
+      "column": "account_credential_change_recency",
+      "value": "changed_1_7d_ago",
+      "rows": 242926,
+      "fraud_rows": 123993,
+      "fraud_rate": 0.510415,
+      "share_of_rows": 0.063202,
+      "flag": false
+    },
+    {
+      "column": "time_of_transaction",
+      "value": "late_night_0_5",
+      "rows": 601695,
+      "fraud_rows": 306632,
+      "fraud_rate": 0.509614,
+      "share_of_rows": 0.156542,
+      "flag": false
+    },
+    {
+      "column": "ip_address_type",
+      "value": "datacenter",
+      "rows": 267957,
+      "fraud_rows": 136510,
+      "fraud_rate": 0.509447,
+      "share_of_rows": 0.069714,
+      "flag": false
+    },
+    {
+      "column": "merchant_category",
+      "value": "luxury",
+      "rows": 289020,
+      "fraud_rows": 141699,
+      "fraud_rate": 0.490274,
+      "share_of_rows": 0.075194,
+      "flag": false
+    },
+    {
+      "column": "tokenization_used",
+      "value": "raw_pan_manual_entry",
+      "rows": 492199,
+      "fraud_rows": 230429,
+      "fraud_rate": 0.468162,
+      "share_of_rows": 0.128055,
+      "flag": false
+    },
+    {
+      "column": "order_shipping_speed",
+      "value": "same_day",
+      "rows": 486947,
+      "fraud_rows": 224944,
+      "fraud_rate": 0.461948,
+      "share_of_rows": 0.126689,
+      "flag": false
+    },
+    {
+      "column": "geo_velocity_bin",
+      "value": "fast",
+      "rows": 486801,
+      "fraud_rows": 211214,
+      "fraud_rate": 0.433882,
+      "share_of_rows": 0.126651,
+      "flag": false
+    },
+    {
+      "column": "three_ds_auth_result",
+      "value": "bypassed",
+      "rows": 393246,
+      "fraud_rows": 163765,
+      "fraud_rate": 0.416444,
+      "share_of_rows": 0.10231,
+      "flag": false
+    },
+    {
+      "column": "session_duration_bin",
+      "value": "very_fast",
+      "rows": 221123,
+      "fraud_rows": 88819,
+      "fraud_rate": 0.401672,
+      "share_of_rows": 0.057529,
+      "flag": false
+    },
+    {
+      "column": "order_shipping_speed",
+      "value": "overnight",
+      "rows": 541873,
+      "fraud_rows": 213924,
+      "fraud_rate": 0.394786,
+      "share_of_rows": 0.140979,
+      "flag": false
+    },
+    {
+      "column": "failed_attempts_before_success",
+      "value": "2",
+      "rows": 266349,
+      "fraud_rows": 101737,
+      "fraud_rate": 0.381969,
+      "share_of_rows": 0.069296,
+      "flag": false
+    },
+    {
+      "column": "country_consistency",
+      "value": "new_country",
+      "rows": 525695,
+      "fraud_rows": 196797,
+      "fraud_rate": 0.374356,
+      "share_of_rows": 0.13677,
+      "flag": false
+    },
+    {
+      "column": "merchant_category",
+      "value": "electronics",
+      "rows": 509007,
+      "fraud_rows": 177632,
+      "fraud_rate": 0.348978,
+      "share_of_rows": 0.132428,
+      "flag": false
+    },
+    {
+      "column": "merchant_location",
+      "value": "neighboring_country",
+      "rows": 497254,
+      "fraud_rows": 168395,
+      "fraud_rate": 0.33865,
+      "share_of_rows": 0.12937,
+      "flag": false
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "4",
+      "rows": 111675,
+      "fraud_rows": 37510,
+      "fraud_rate": 0.335885,
+      "share_of_rows": 0.029054,
+      "flag": false
+    },
+    {
+      "column": "account_credential_change_recency",
+      "value": "not_applicable",
+      "rows": 443755,
+      "fraud_rows": 140629,
+      "fraud_rate": 0.316907,
+      "share_of_rows": 0.115451,
+      "flag": false
+    },
+    {
+      "column": "customer_type",
+      "value": "global",
+      "rows": 443755,
+      "fraud_rows": 140629,
+      "fraud_rate": 0.316907,
+      "share_of_rows": 0.115451,
+      "flag": false
+    },
+    {
+      "column": "merchant_category_vs_history",
+      "value": "no_history",
+      "rows": 443755,
+      "fraud_rows": 140629,
+      "fraud_rate": 0.316907,
+      "share_of_rows": 0.115451,
+      "flag": false
+    },
+    {
+      "column": "segment",
+      "value": "D_guest",
+      "rows": 443755,
+      "fraud_rows": 140629,
+      "fraud_rate": 0.316907,
+      "share_of_rows": 0.115451,
+      "flag": false
+    },
+    {
+      "column": "tokenization_used",
+      "value": "raw_pan_online",
+      "rows": 996368,
+      "fraud_rows": 275516,
+      "fraud_rate": 0.27652,
+      "share_of_rows": 0.259224,
+      "flag": false
+    },
+    {
+      "column": "three_ds_auth_result",
+      "value": "not_enrolled",
+      "rows": 534369,
+      "fraud_rows": 140574,
+      "fraud_rate": 0.263065,
+      "share_of_rows": 0.139026,
+      "flag": false
+    },
+    {
+      "column": "failed_attempts_before_success",
+      "value": "1",
+      "rows": 428380,
+      "fraud_rows": 101296,
+      "fraud_rate": 0.236463,
+      "share_of_rows": 0.111451,
+      "flag": false
+    },
+    {
+      "column": "merchant_category_vs_history",
+      "value": "occasional_category",
+      "rows": 231101,
+      "fraud_rows": 54295,
+      "fraud_rate": 0.234941,
+      "share_of_rows": 0.060125,
+      "flag": false
+    },
+    {
+      "column": "device_fingerprint_match",
+      "value": "unknown_device",
+      "rows": 256865,
+      "fraud_rows": 59614,
+      "fraud_rate": 0.232083,
+      "share_of_rows": 0.066828,
+      "flag": false
+    },
+    {
+      "column": "network_carrier_type",
+      "value": "corporate_vpn",
+      "rows": 462485,
+      "fraud_rows": 101302,
+      "fraud_rate": 0.219038,
+      "share_of_rows": 0.120324,
+      "flag": false
+    },
+    {
+      "column": "merchant_risk_score",
+      "value": "high_risk",
+      "rows": 920247,
+      "fraud_rows": 198241,
+      "fraud_rate": 0.215422,
+      "share_of_rows": 0.23942,
+      "flag": false
+    },
+    {
+      "column": "segment",
+      "value": "C_new",
+      "rows": 805458,
+      "fraud_rows": 164387,
+      "fraud_rate": 0.204091,
+      "share_of_rows": 0.209555,
+      "flag": false
+    },
+    {
+      "column": "ip_address_type",
+      "value": "vpn",
+      "rows": 321332,
+      "fraud_rows": 59372,
+      "fraud_rate": 0.184768,
+      "share_of_rows": 0.083601,
+      "flag": false
+    },
+    {
+      "column": "card_present_cnp",
+      "value": "cnp_moto",
+      "rows": 844586,
+      "fraud_rows": 130316,
+      "fraud_rate": 0.154296,
+      "share_of_rows": 0.219735,
+      "flag": false
+    },
+    {
+      "column": "time_of_transaction",
+      "value": "evening_18_24",
+      "rows": 1081638,
+      "fraud_rows": 162969,
+      "fraud_rate": 0.150669,
+      "share_of_rows": 0.281409,
+      "flag": false
+    },
+    {
+      "column": "chargeback_history_count",
+      "value": "0",
+      "rows": 3436326,
+      "fraud_rows": 513465,
+      "fraud_rate": 0.149423,
+      "share_of_rows": 0.894026,
+      "flag": false
+    },
+    {
+      "column": "card_present_cnp",
+      "value": "cnp_online",
+      "rows": 2999067,
+      "fraud_rows": 433956,
+      "fraud_rate": 0.144697,
+      "share_of_rows": 0.780265,
+      "flag": false
+    },
+    {
+      "column": "account_credential_change_recency",
+      "value": "changed_7_30d_ago",
+      "rows": 275505,
+      "fraud_rows": 35185,
+      "fraud_rate": 0.127711,
+      "share_of_rows": 0.071678,
+      "flag": false
+    },
+    {
+      "column": "chargeback_history_count",
+      "value": "3",
+      "rows": 33603,
+      "fraud_rows": 4252,
+      "fraud_rate": 0.126536,
+      "share_of_rows": 0.008742,
+      "flag": false
+    },
+    {
+      "column": "chargeback_history_count",
+      "value": "2",
+      "rows": 102066,
+      "fraud_rows": 12755,
+      "fraud_rate": 0.124968,
+      "share_of_rows": 0.026554,
+      "flag": false
+    },
+    {
+      "column": "customer_type",
+      "value": "customer_based",
+      "rows": 3399898,
+      "fraud_rows": 423643,
+      "fraud_rate": 0.124605,
+      "share_of_rows": 0.884549,
+      "flag": false
+    },
+    {
+      "column": "segment",
+      "value": "B_regular",
+      "rows": 1132653,
+      "fraud_rows": 141011,
+      "fraud_rate": 0.124496,
+      "share_of_rows": 0.294681,
+      "flag": false
+    },
+    {
+      "column": "chargeback_history_count",
+      "value": "1",
+      "rows": 271658,
+      "fraud_rows": 33800,
+      "fraud_rate": 0.124421,
+      "share_of_rows": 0.070677,
+      "flag": false
+    },
+    {
+      "column": "transaction_amount_bin",
+      "value": "low",
+      "rows": 1520020,
+      "fraud_rows": 177632,
+      "fraud_rate": 0.116862,
+      "share_of_rows": 0.395462,
+      "flag": false
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "3",
+      "rows": 334715,
+      "fraud_rows": 37778,
+      "fraud_rate": 0.112866,
+      "share_of_rows": 0.087083,
+      "flag": false
+    },
+    {
+      "column": "transaction_velocity_1h",
+      "value": "2x_baseline",
+      "rows": 515416,
+      "fraud_rows": 55889,
+      "fraud_rate": 0.108435,
+      "share_of_rows": 0.134095,
+      "flag": false
+    },
+    {
+      "column": "country_consistency",
+      "value": "frequent_travel_country",
+      "rows": 586730,
+      "fraud_rows": 63004,
+      "fraud_rate": 0.107382,
+      "share_of_rows": 0.152649,
+      "flag": false
+    },
+    {
+      "column": "merchant_location",
+      "value": "same_country",
+      "rows": 908257,
+      "fraud_rows": 87653,
+      "fraud_rate": 0.096507,
+      "share_of_rows": 0.2363,
+      "flag": false
+    },
+    {
+      "column": "transaction_amount_bin",
+      "value": "medium",
+      "rows": 1978694,
+      "fraud_rows": 181868,
+      "fraud_rate": 0.091913,
+      "share_of_rows": 0.514795,
+      "flag": false
+    },
+    {
+      "column": "device_fingerprint_match",
+      "value": "new_device",
+      "rows": 610945,
+      "fraud_rows": 54249,
+      "fraud_rate": 0.088795,
+      "share_of_rows": 0.158949,
+      "flag": false
+    },
+    {
+      "column": "order_shipping_speed",
+      "value": "in_store_pickup",
+      "rows": 323392,
+      "fraud_rows": 28271,
+      "fraud_rate": 0.08742,
+      "share_of_rows": 0.084137,
+      "flag": false
+    },
+    {
+      "column": "segment",
+      "value": "A_established",
+      "rows": 1461787,
+      "fraud_rows": 118245,
+      "fraud_rate": 0.080891,
+      "share_of_rows": 0.380312,
+      "flag": false
+    },
+    {
+      "column": "network_carrier_type",
+      "value": "wifi",
+      "rows": 1600823,
+      "fraud_rows": 125795,
+      "fraud_rate": 0.078581,
+      "share_of_rows": 0.416485,
+      "flag": false
+    },
+    {
+      "column": "order_shipping_speed",
+      "value": "expedited",
+      "rows": 887817,
+      "fraud_rows": 67582,
+      "fraud_rate": 0.076122,
+      "share_of_rows": 0.230983,
+      "flag": false
+    },
+    {
+      "column": "network_carrier_type",
+      "value": "mobile_data",
+      "rows": 1347312,
+      "fraud_rows": 101949,
+      "fraud_rate": 0.075668,
+      "share_of_rows": 0.350529,
+      "flag": false
+    },
+    {
+      "column": "merchant_category_vs_history",
+      "value": "rare_category",
+      "rows": 632258,
+      "fraud_rows": 46957,
+      "fraud_rate": 0.074269,
+      "share_of_rows": 0.164494,
+      "flag": false
+    },
+    {
+      "column": "session_duration_bin",
+      "value": "normal",
+      "rows": 2281416,
+      "fraud_rows": 156666,
+      "fraud_rate": 0.068671,
+      "share_of_rows": 0.593554,
+      "flag": false
+    },
+    {
+      "column": "merchant_category",
+      "value": "healthcare",
+      "rows": 221216,
+      "fraud_rows": 13716,
+      "fraud_rate": 0.062003,
+      "share_of_rows": 0.057554,
+      "flag": false
+    },
+    {
+      "column": "cvv_match_status",
+      "value": "icvv_match",
+      "rows": 524308,
+      "fraud_rows": 31683,
+      "fraud_rate": 0.060428,
+      "share_of_rows": 0.136409,
+      "flag": false
+    },
+    {
+      "column": "merchant_category",
+      "value": "restaurant",
+      "rows": 384845,
+      "fraud_rows": 22711,
+      "fraud_rate": 0.059013,
+      "share_of_rows": 0.100125,
+      "flag": false
+    },
+    {
+      "column": "merchant_category",
+      "value": "travel",
+      "rows": 411240,
+      "fraud_rows": 20609,
+      "fraud_rate": 0.050114,
+      "share_of_rows": 0.106992,
+      "flag": false
+    },
+    {
+      "column": "time_of_transaction",
+      "value": "afternoon_12_18",
+      "rows": 1203429,
+      "fraud_rows": 56870,
+      "fraud_rate": 0.047257,
+      "share_of_rows": 0.313095,
+      "flag": false
+    },
+    {
+      "column": "geo_distance_bin",
+      "value": "same_location",
+      "rows": 3322676,
+      "fraud_rows": 151331,
+      "fraud_rate": 0.045545,
+      "share_of_rows": 0.864458,
+      "flag": false
+    },
+    {
+      "column": "failed_attempts_before_success",
+      "value": "0",
+      "rows": 2816063,
+      "fraud_rows": 126064,
+      "fraud_rate": 0.044766,
+      "share_of_rows": 0.732653,
+      "flag": false
+    },
+    {
+      "column": "geo_velocity_bin",
+      "value": "normal",
+      "rows": 3143911,
+      "fraud_rows": 140117,
+      "fraud_rate": 0.044568,
+      "share_of_rows": 0.817949,
+      "flag": false
+    },
+    {
+      "column": "merchant_risk_score",
+      "value": "medium_risk",
+      "rows": 1043098,
+      "fraud_rows": 45807,
+      "fraud_rate": 0.043914,
+      "share_of_rows": 0.271382,
+      "flag": false
+    },
+    {
+      "column": "time_of_transaction",
+      "value": "morning_6_12",
+      "rows": 956891,
+      "fraud_rows": 37801,
+      "fraud_rate": 0.039504,
+      "share_of_rows": 0.248954,
+      "flag": false
+    },
+    {
+      "column": "merchant_location",
+      "value": "home_city",
+      "rows": 2037871,
+      "fraud_rows": 71851,
+      "fraud_rate": 0.035258,
+      "share_of_rows": 0.530191,
+      "flag": false
+    },
+    {
+      "column": "merchant_category",
+      "value": "retail",
+      "rows": 658253,
+      "fraud_rows": 23096,
+      "fraud_rate": 0.035087,
+      "share_of_rows": 0.171257,
+      "flag": false
+    },
+    {
+      "column": "tokenization_used",
+      "value": "emv_chip_token",
+      "rows": 814873,
+      "fraud_rows": 27828,
+      "fraud_rate": 0.03415,
+      "share_of_rows": 0.212005,
+      "flag": false
+    },
+    {
+      "column": "tokenization_used",
+      "value": "issuer_token",
+      "rows": 609026,
+      "fraud_rows": 18381,
+      "fraud_rate": 0.030181,
+      "share_of_rows": 0.15845,
+      "flag": false
+    },
+    {
+      "column": "country_consistency",
+      "value": "same_country",
+      "rows": 2426656,
+      "fraud_rows": 65066,
+      "fraud_rate": 0.026813,
+      "share_of_rows": 0.631341,
+      "flag": false
+    },
+    {
+      "column": "account_credential_change_recency",
+      "value": "no_recent_change",
+      "rows": 2595291,
+      "fraud_rows": 67186,
+      "fraud_rate": 0.025888,
+      "share_of_rows": 0.675215,
+      "flag": false
+    },
+    {
+      "column": "three_ds_auth_result",
+      "value": "challenge_pass",
+      "rows": 942160,
+      "fraud_rows": 23140,
+      "fraud_rate": 0.024561,
+      "share_of_rows": 0.245121,
+      "flag": false
+    },
+    {
+      "column": "merchant_risk_score",
+      "value": "low_risk",
+      "rows": 1330533,
+      "fraud_rows": 32659,
+      "fraud_rate": 0.024546,
+      "share_of_rows": 0.346164,
+      "flag": false
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "1",
+      "rows": 1376399,
+      "fraud_rows": 33220,
+      "fraud_rate": 0.024135,
+      "share_of_rows": 0.358097,
+      "flag": false
+    },
+    {
+      "column": "cards_on_device_30d",
+      "value": "2",
+      "rows": 1602924,
+      "fraud_rows": 37891,
+      "fraud_rate": 0.023639,
+      "share_of_rows": 0.417031,
+      "flag": false
+    },
+    {
+      "column": "ip_address_type",
+      "value": "corporate",
+      "rows": 603884,
+      "fraud_rows": 13919,
+      "fraud_rate": 0.023049,
+      "share_of_rows": 0.157112,
+      "flag": false
+    },
+    {
+      "column": "session_duration_bin",
+      "value": "slow",
+      "rows": 1045373,
+      "fraud_rows": 23046,
+      "fraud_rate": 0.022046,
+      "share_of_rows": 0.271974,
+      "flag": false
+    },
+    {
+      "column": "three_ds_auth_result",
+      "value": "frictionless_pass",
+      "rows": 1673752,
+      "fraud_rows": 34565,
+      "fraud_rate": 0.020651,
+      "share_of_rows": 0.435459,
+      "flag": false
+    },
+    {
+      "column": "order_shipping_speed",
+      "value": "standard",
+      "rows": 1603624,
+      "fraud_rows": 29551,
+      "fraud_rate": 0.018428,
+      "share_of_rows": 0.417214,
+      "flag": false
+    },
+    {
+      "column": "cvv_match_status",
+      "value": "cvv2_match",
+      "rows": 2539743,
+      "fraud_rows": 46378,
+      "fraud_rate": 0.018261,
+      "share_of_rows": 0.660763,
+      "flag": false
+    },
+    {
+      "column": "merchant_category",
+      "value": "utility",
+      "rows": 397881,
+      "fraud_rows": 7069,
+      "fraud_rate": 0.017767,
+      "share_of_rows": 0.103516,
+      "flag": false
+    },
+    {
+      "column": "merchant_category",
+      "value": "grocery",
+      "rows": 711436,
+      "fraud_rows": 11874,
+      "fraud_rate": 0.01669,
+      "share_of_rows": 0.185094,
+      "flag": false
+    },
+    {
+      "column": "transaction_velocity_1h",
+      "value": "within_normal",
+      "rows": 2597421,
+      "fraud_rows": 38920,
+      "fraud_rate": 0.014984,
+      "share_of_rows": 0.675769,
+      "flag": false
+    },
+    {
+      "column": "merchant_category_vs_history",
+      "value": "frequent_category",
+      "rows": 2247656,
+      "fraud_rows": 33539,
+      "fraud_rate": 0.014922,
+      "share_of_rows": 0.584771,
+      "flag": false
+    },
+    {
+      "column": "ip_address_type",
+      "value": "residential",
+      "rows": 2161427,
+      "fraud_rows": 28409,
+      "fraud_rate": 0.013144,
+      "share_of_rows": 0.562337,
+      "flag": false
+    },
+    {
+      "column": "tokenization_used",
+      "value": "network_token_wallet",
+      "rows": 931187,
+      "fraud_rows": 12118,
+      "fraud_rate": 0.013013,
+      "share_of_rows": 0.242266,
+      "flag": false
+    }
+  ],
+  "numeric_support": [
+    {
+      "column": "session_duration_sec",
+      "legit_min": 5.199999809265137,
+      "legit_max": 1800.0,
+      "fraud_min": 0.30000001192092896,
+      "fraud_max": 1800.0,
+      "fraud_rows_outside_legit_range": 295940,
+      "fraud_only_share": 0.524463
+    },
+    {
+      "column": "geo_distance_km",
+      "legit_min": 0.0,
+      "legit_max": 385.5,
+      "fraud_min": 0.0,
+      "fraud_max": 8000.0,
+      "fraud_rows_outside_legit_range": 217820,
+      "fraud_only_share": 0.38602
+    },
+    {
+      "column": "geo_velocity_kmh",
+      "legit_min": 0.0,
+      "legit_max": 449.5,
+      "fraud_min": 0.0,
+      "fraud_max": 2500.0,
+      "fraud_rows_outside_legit_range": 216834,
+      "fraud_only_share": 0.384272
+    },
+    {
+      "column": "cards_on_device_30d",
+      "legit_min": 1.0,
+      "legit_max": 15.0,
+      "fraud_min": 1.0,
+      "fraud_max": 17.0,
+      "fraud_rows_outside_legit_range": 6929,
+      "fraud_only_share": 0.01228
+    },
+    {
+      "column": "transaction_amount",
+      "legit_min": 0.5,
+      "legit_max": 9999.0,
+      "fraud_min": 0.5,
+      "fraud_max": 9999.0,
+      "fraud_rows_outside_legit_range": 0,
+      "fraud_only_share": 0.0
+    },
+    {
+      "column": "avg_amount_deviation_sigma",
+      "legit_min": 0.0,
+      "legit_max": 10.0,
+      "fraud_min": 0.0,
+      "fraud_max": 10.0,
+      "fraud_rows_outside_legit_range": 0,
+      "fraud_only_share": 0.0
+    },
+    {
+      "column": "failed_attempts_before_success",
+      "legit_min": 0.0,
+      "legit_max": 10.0,
+      "fraud_min": 0.0,
+      "fraud_max": 10.0,
+      "fraud_rows_outside_legit_range": 0,
+      "fraud_only_share": 0.0
+    },
+    {
+      "column": "account_age_days",
+      "legit_min": 0.0,
+      "legit_max": 3649.0,
+      "fraud_min": 0.0,
+      "fraud_max": 3649.0,
+      "fraud_rows_outside_legit_range": 0,
+      "fraud_only_share": 0.0
+    },
+    {
+      "column": "chargeback_history_count",
+      "legit_min": 0.0,
+      "legit_max": 3.0,
+      "fraud_min": 0.0,
+      "fraud_max": 3.0,
+      "fraud_rows_outside_legit_range": 0,
+      "fraud_only_share": 0.0
+    }
+  ],
+  "derived_pairs": [
+    {
+      "bin_column": "transaction_amount_bin",
+      "numeric_column": "transaction_amount",
+      "ranges": {
+        "low": [
+          0.5,
+          50.0
+        ],
+        "medium": [
+          50.0099983215332,
+          500.0
+        ],
+        "high": [
+          500.010009765625,
+          2000.0
+        ],
+        "very_high": [
+          2000.010009765625,
+          9999.0
+        ]
+      }
+    },
+    {
+      "bin_column": "geo_velocity_bin",
+      "numeric_column": "geo_velocity_kmh",
+      "ranges": {
+        "normal": [
+          0.0,
+          50.0
+        ],
+        "fast": [
+          50.099998474121094,
+          500.0
+        ],
+        "impossible": [
+          500.1000061035156,
+          2500.0
+        ]
+      }
+    },
+    {
+      "bin_column": "geo_distance_bin",
+      "numeric_column": "geo_distance_km",
+      "ranges": {
+        "same_location": [
+          0.0,
+          50.0
+        ],
+        "short": [
+          50.099998474121094,
+          490.0
+        ],
+        "long": [
+          600.0,
+          8000.0
+        ]
+      }
+    },
+    {
+      "bin_column": "session_duration_bin",
+      "numeric_column": "session_duration_sec",
+      "ranges": {
+        "bot_speed": [
+          0.30000001192092896,
+          5.0
+        ],
+        "very_fast": [
+          5.099999904632568,
+          30.0
+        ],
+        "normal": [
+          30.100000381469727,
+          180.0
+        ],
+        "slow": [
+          180.10000610351562,
+          1800.0
+        ]
+      }
+    },
+    {
+      "bin_column": "segment",
+      "numeric_column": "account_age_days",
+      "ranges": {
+        "D_guest": [
+          0.0,
+          0.0
+        ],
+        "C_new": [
+          7.0,
+          179.0
+        ],
+        "B_regular": [
+          180.0,
+          729.0
+        ],
+        "A_established": [
+          730.0,
+          3649.0
+        ]
+      }
+    },
+    {
+      "bin_column": "customer_type",
+      "numeric_column": "account_age_days",
+      "ranges": {
+        "global": [
+          0.0,
+          0.0
+        ],
+        "customer_based": [
+          7.0,
+          3649.0
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "near_deterministic_values": [
+      "cards_on_device_30d=16",
+      "cards_on_device_30d=17",
+      "geo_distance_bin=long",
+      "geo_velocity_bin=impossible",
+      "session_duration_bin=bot_speed",
+      "failed_attempts_before_success=6",
+      "failed_attempts_before_success=10",
+      "cards_on_device_30d=7",
+      "cards_on_device_30d=8",
+      "cards_on_device_30d=10",
+      "merchant_category_vs_history=never_before_category",
+      "failed_attempts_before_success=4",
+      "cards_on_device_30d=15",
+      "cards_on_device_30d=14",
+      "cards_on_device_30d=11",
+      "cards_on_device_30d=12",
+      "cards_on_device_30d=9",
+      "cards_on_device_30d=6",
+      "cards_on_device_30d=5",
+      "cards_on_device_30d=13",
+      "device_fingerprint_match=known_device",
+      "failed_attempts_before_success=5"
+    ],
+    "columns_with_near_deterministic_values": [
+      "cards_on_device_30d",
+      "device_fingerprint_match",
+      "failed_attempts_before_success",
+      "geo_distance_bin",
+      "geo_velocity_bin",
+      "merchant_category_vs_history",
+      "session_duration_bin"
+    ],
+    "columns_with_fraud_only_tail": [
+      "session_duration_sec",
+      "geo_distance_km",
+      "geo_velocity_kmh",
+      "cards_on_device_30d"
+    ],
+    "derived_bins": [
+      "transaction_amount_bin <- transaction_amount",
+      "geo_velocity_bin <- geo_velocity_kmh",
+      "geo_distance_bin <- geo_distance_km",
+      "session_duration_bin <- session_duration_sec",
+      "segment <- account_age_days",
+      "customer_type <- account_age_days"
+    ]
+  }
+}
