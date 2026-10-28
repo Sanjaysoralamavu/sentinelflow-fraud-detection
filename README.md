@@ -91,6 +91,34 @@ Accuracy is not a primary metric because fraud transactions are rare.
 5. Add controlled drift experiments and adaptation logic.
 6. Produce result plots, final report material, and demonstration workflow.
 
+## Running the Evaluation
+
+The official SentinelFlow CLI runs the experiment and automatically generates the evaluation outputs.
+
+To reproduce the 1.5-million-row controlled-drift evaluation:
+
+```powershell
+sentinelflow run --config configs/full.yaml --max-evaluation-rows 1500000
+```
+
+The command uses the configured warm-up dataset, processes 1,500,000 evaluation transactions, records model predictions, and generates the experiment and evaluation artifacts.
+
+Experiment artifacts are written to:
+
+```text
+results/metrics/experiment/
+```
+
+Evaluation artifacts are written to:
+
+```text
+results/metrics/evaluation/
+```
+
+The evaluation outputs include batch-, phase-, and model-level CSV summaries; detector-quality results; relative performance loss after drift; static metric visualizations; and interactive HTML dashboards.
+
+The evaluated model-performance metrics include Precision, Recall, F1, FPR, ROC-AUC, Average Precision (AP), and Precision@100. Relative Performance Loss is additionally calculated to quantify the change in model performance between the pre-drift and fully drifted phases.
+
 ## Continuous Integration
 
 GitHub Actions runs on every push and pull request. The workflow verifies that this README exists, compiles Python source files, and runs tests when a `tests/` directory is present.

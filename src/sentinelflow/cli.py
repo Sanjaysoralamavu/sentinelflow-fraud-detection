@@ -6,6 +6,8 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from sentinelflow.config import ProjectConfig, load_config
+from sentinelflow.evaluation.pipeline import generate_evaluation_outputs
+from sentinelflow.evaluation.recorder import EvaluationRecorder
 from sentinelflow.experiment import (
     run_experiment,
     write_experiment_artifacts,
@@ -88,11 +90,41 @@ def _show_config(arguments: argparse.Namespace) -> int:
     return 0
 
 
+# def _run_experiment(arguments: argparse.Namespace) -> int:
+#     config = load_config(arguments.config)
+
+#     result = run_experiment(
+#         config,
+#         max_evaluation_rows=arguments.max_evaluation_rows,
+#     )
+
+#     output_directory = config.results_path / "metrics" / "experiment"
+
+#     artifact_paths = write_experiment_artifacts(
+#         result,
+#         config,
+#         output_directory,
+#     )
+
+#     result_data = result.to_dict()
+#     output = {
+#         "summary": result_data["summary"],
+#         "drift_events": result_data["drift_events"],
+#         "artifacts": {name: str(path) for name, path in artifact_paths.items()},
+#     }
+
+#     print(json.dumps(output, indent=2, sort_keys=True))
+
+
+#     return 0
 def _run_experiment(arguments: argparse.Namespace) -> int:
     config = load_config(arguments.config)
 
+    recorder = EvaluationRecorder.from_config(config)
+
     result = run_experiment(
         config,
+        recorder=recorder,
         max_evaluation_rows=arguments.max_evaluation_rows,
     )
 
@@ -104,11 +136,21 @@ def _run_experiment(arguments: argparse.Namespace) -> int:
         output_directory,
     )
 
+    evaluation_output_directory = config.results_path / "metrics" / "evaluation"
+
+    evaluation_paths = generate_evaluation_outputs(
+        recorder,
+        result,
+        evaluation_output_directory,
+    )
+
     result_data = result.to_dict()
+
     output = {
         "summary": result_data["summary"],
         "drift_events": result_data["drift_events"],
         "artifacts": {name: str(path) for name, path in artifact_paths.items()},
+        "evaluation_artifacts": {name: str(path) for name, path in evaluation_paths.items()},
     }
 
     print(json.dumps(output, indent=2, sort_keys=True))
