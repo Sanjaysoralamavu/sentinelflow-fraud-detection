@@ -156,3 +156,10 @@ def _validate_config(config: ProjectConfig) -> None:
 
     if not 0.0 <= max_intensity <= 1.0:
         raise ConfigurationError("drift.max_intensity must be between zero and one.")
+
+    from sentinelflow.streaming.drift_injector import DriftSettings
+
+    try:
+        DriftSettings.from_config(drift)
+    except (KeyError, TypeError, ValueError) as error:
+        raise ConfigurationError(f"Invalid drift configuration: {error}") from error
