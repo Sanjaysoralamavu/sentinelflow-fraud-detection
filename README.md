@@ -91,6 +91,8 @@ Accuracy is not a primary metric because fraud transactions are rare.
 5. Add controlled drift experiments and adaptation logic.
 6. Produce result plots, final report material, and demonstration workflow.
 
+The controlled-drift scenarios (`none`, `separability`, `camouflage`) are selected with `drift.scenario` and documented in [docs/DRIFT_SCENARIOS.md](docs/DRIFT_SCENARIOS.md).
+
 ## Continuous Integration
 
 GitHub Actions runs on every push and pull request. The workflow verifies that this README exists, compiles Python source files, and runs tests when a `tests/` directory is present.
