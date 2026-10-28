@@ -15,9 +15,10 @@ Owner: Aravindan Chidambaram. Data: verified CreditTransAct file
    legitimate row is faster than 5.2 s, travels above 449.5 km/h, or is more
    than 385.5 km from home. A real system would see legitimate transactions in
    those ranges, so these separations will not transfer to real data.
-3. **Removing the flagged features barely changes performance.** The reduced
-   and strict feature sets keep ROC-AUC ≈ 0.999 and PR-AUC ≈ 0.994–0.998
-   (diagnostic below). The separation is spread across about 20 engineered
+3. **Removing the flagged features barely changes performance.** With the
+   project's own static baselines, the reduced and strict feature sets keep
+   ROC-AUC 0.9993–0.9996 and PR-AUC 0.9977–0.9984, within 0.0002 of the full set.
+   The separation is spread across about 20 engineered
    fraud-signal features; ROC-AUC only falls below 0.95 after 23 of 31 features
    are removed. The final report should present near-0.99 scores as a property
    of this synthetic dataset, not as evidence of a strong detector.
@@ -126,6 +127,27 @@ and drift are byte-identical across configurations (tested), and only the
 model inputs differ. The target and both identifiers are removed in every
 configuration. Listing them in `exclude_columns` is rejected, and so is a
 misspelled column name.
+
+## Official-pipeline comparison
+
+`python -m sentinelflow.data.ablation_probe` with the project's own
+preprocessor and frozen static baselines: fitted on the 500,000-row warm-up,
+scored on the next 500,000 evaluation rows before drift, threshold 0.5
+(`results/metrics/feature_audit/ablation_probe.csv`):
+
+| Configuration | Input columns | Model | ROC-AUC | PR-AUC | Precision | Recall | F1 |
+| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| full | 31 | static_logistic | 0.9996 | 0.9985 | 0.9969 | 0.9927 | 0.9948 |
+| full | 31 | static_random_forest | 0.9993 | 0.9977 | 0.9998 | 0.9926 | 0.9962 |
+| ablation_reduced | 23 | static_logistic | 0.9996 | 0.9984 | 0.9934 | 0.9927 | 0.9930 |
+| ablation_reduced | 23 | static_random_forest | 0.9994 | 0.9979 | 0.9989 | 0.9922 | 0.9955 |
+| ablation_strict | 21 | static_logistic | 0.9994 | 0.9981 | 0.9888 | 0.9922 | 0.9905 |
+| ablation_strict | 21 | static_random_forest | 0.9993 | 0.9977 | 0.9968 | 0.9910 | 0.9939 |
+
+Removing 10 of 31 columns costs at most 0.0002 ROC-AUC and 0.004 F1; the
+main effect is slightly lower precision for logistic regression (0.997 to
+0.989). The feature manifests for all three configurations are in
+`results/metrics/feature_audit/manifests/`.
 
 ## Diagnostic: how much do these features matter?
 
