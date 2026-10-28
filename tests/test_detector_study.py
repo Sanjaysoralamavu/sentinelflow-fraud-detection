@@ -6,6 +6,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from sentinelflow.config import ProjectConfig, load_config
@@ -17,6 +18,7 @@ from sentinelflow.models.common import (
     DriftEvent,
 )
 from sentinelflow.models.detector_study import (
+    DEFAULT_SCENARIOS,
     check_recovery,
     drift_start_batch,
     parse_scenario,
@@ -198,11 +200,9 @@ def test_study_runs_every_scenario_and_seed_and_writes_artifacts(
         config, seeds=[1, 2], max_evaluation_rows=600, output_directory=output
     )
 
+    assert list(DEFAULT_SCENARIOS)[:2] == ["no_drift", "separability"]
     assert [(run.scenario, run.seed) for run in study.runs] == [
-        ("no_drift", 1),
-        ("no_drift", 2),
-        ("controlled_drift", 1),
-        ("controlled_drift", 2),
+        (scenario, seed) for scenario in DEFAULT_SCENARIOS for seed in (1, 2)
     ]
 
     for run in study.runs:
@@ -216,13 +216,36 @@ def test_study_runs_every_scenario_and_seed_and_writes_artifacts(
         else:
             assert run.drift_start_batch == 3
 
+        # Detector quality is scored for both detectors against the drift start.
+        assert [(q.model, q.detector) for q in run.detector_quality] == [
+            ("adaptive_adwin", "adwin"),
+            ("adaptive_ddm", "ddm"),
+        ]
+        for quality in run.detector_quality:
+            if run.drift_start_batch is None:
+                assert quality.missed_detection is False
+                assert quality.false_alarms == quality.total_alarms
+
+        # Every model, static and adaptive, has overall and per-phase metrics.
+        assert set(run.overall_metrics) == set(run.summary.model_names)
+        assert set(run.phase_metrics) == set(run.summary.model_names)
+        assert set(run.phase_metrics["static_logistic"]) == set(run.summary.phase_counts)
+
     saved = json.loads((output / "detector_study.json").read_text(encoding="utf-8"))
     assert saved["parameters"]["seeds"] == [1, 2]
     assert saved["parameters"]["label_delay_batches"] == DELAY
     assert saved["parameters"]["adaptive"]["recent_window_rows"] == WINDOW_ROWS
-    assert len(saved["runs"]) == 4
+    assert len(saved["runs"]) == len(study.runs)
 
-    for scenario in ("no_drift", "controlled_drift"):
+    detectors = pd.read_csv(output / "detector_summary.csv")
+    assert len(detectors) == 2 * len(study.runs)
+    assert {"false_alarms", "missed_detection", "observed_detection_delay"} <= set(detectors)
+
+    phases = pd.read_csv(output / "model_phase_summary.csv")
+    assert {"overall", PHASE_PRE_DRIFT} <= set(phases["phase"])
+    assert {"recall", "roc_auc", "average_precision"} <= set(phases)
+
+    for scenario in DEFAULT_SCENARIOS:
         for seed in (1, 2):
             run_directory = output / scenario / f"seed_{seed}"
             for name in ("run_manifest", "feature_manifest", "drift_events", "study_run"):
@@ -289,3 +312,23 @@ def test_study_rejects_missing_or_duplicate_seeds(synthetic_parquet: Path, tmp_p
         run_detector_study(config, seeds=[])
     with pytest.raises(ValueError, match="unique"):
         run_detector_study(config, seeds=[1, 1])
+
+
+def test_study_can_write_per_run_evaluation_outputs(
+    synthetic_parquet: Path, tmp_path: Path
+) -> None:
+    config = make_config(synthetic_parquet, tmp_path)
+    output = tmp_path / "study"
+
+    run_detector_study(
+        config,
+        seeds=[1],
+        scenarios={"separability": {"enabled": True, "scenario": "separability"}},
+        max_evaluation_rows=600,
+        output_directory=output,
+        evaluation_outputs=True,
+    )
+
+    evaluation = output / "separability" / "seed_1" / "evaluation"
+    for name in ("detector_quality.csv", "phase_summary.csv", "model_summary.csv"):
+        assert (evaluation / name).is_file()

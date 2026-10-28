@@ -2,14 +2,13 @@
 
 Examples::
 
-    # No-drift control and the current controlled drift, three seeds
+    # Default scenarios (no drift, separability, and camouflage when available)
     python scripts/run_detector_study.py --seeds 543 544 545
 
     # Add a scenario by overriding keys of the ``drift`` config section
     python scripts/run_detector_study.py --seeds 543 544 545 \\
-        --scenario no_drift:enabled=false \\
-        --scenario controlled_drift:enabled=true \\
-        --scenario degrading_drift:enabled=true,mode=degrading
+        --scenario no_drift:enabled=false,scenario=none \\
+        --scenario camouflage:enabled=true,scenario=camouflage
 """
 
 from __future__ import annotations
@@ -40,6 +39,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Limit evaluation rows for a smoke run; omit for the full audited stream.",
     )
     parser.add_argument(
+        "--evaluation-outputs",
+        action="store_true",
+        help="Also write per-run evaluation CSVs, figures and dashboards.",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=None,
@@ -61,6 +65,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         scenarios=scenarios,
         max_evaluation_rows=args.max_evaluation_rows,
         output_directory=output,
+        evaluation_outputs=args.evaluation_outputs,
     )
 
     for run in study.runs:
@@ -72,6 +77,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "drift_start_batch": run.drift_start_batch,
                     "last_scored_batch": run.last_scored_batch,
                     "alarm_counts": run.alarm_counts(),
+                    "detector_quality": [
+                        {
+                            "model": q.model,
+                            "false_alarms": q.false_alarms,
+                            "missed_detection": q.missed_detection,
+                            "source_delay": q.source_detection_delay,
+                            "observed_delay": q.observed_detection_delay,
+                        }
+                        for q in run.detector_quality
+                    ],
                     "recovery_violations": len(run.recovery_violations),
                 }
             )

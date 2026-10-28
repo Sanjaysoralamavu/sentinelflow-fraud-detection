@@ -2,19 +2,21 @@
 
 This document reviews the detector and recovery parameters, explains the
 timing limits they impose, and describes how to run the multi-seed study.
-Results will be added once the degrading-drift scenario (issue #8) is merged.
+Results will be added after the full-stream runs.
 
 ## How to run
 
 ```bash
-# No-drift control and the current controlled drift, three seeds, full stream
+# Default scenarios: no_drift, separability, and camouflage (once #14 is on main)
 python scripts/run_detector_study.py --seeds 543 544 545
 
-# Add the degrading scenario once issue #8 is merged (key names follow that PR)
+# Also write per-run evaluation CSVs, figures and dashboards
+python scripts/run_detector_study.py --seeds 543 544 545 --evaluation-outputs
+
+# Choose scenarios explicitly (keys override the drift config section)
 python scripts/run_detector_study.py --seeds 543 544 545 \
-    --scenario no_drift:enabled=false \
-    --scenario controlled_drift:enabled=true \
-    --scenario degrading_drift:enabled=true,mode=degrading
+    --scenario no_drift:enabled=false,scenario=none \
+    --scenario camouflage:enabled=true,scenario=camouflage
 
 # The 30-batch experiment (first 1.5M evaluation rows)
 python scripts/run_detector_study.py --seeds 543 --max-evaluation-rows 1500000
@@ -25,18 +27,23 @@ Artifacts go to `results/metrics/experiment/detector_study/` (git-ignored):
 | File | Contents |
 | --- | --- |
 | `detector_study.json` | All parameter settings and every run |
+| `detector_summary.csv` | One row per run and detector: false alarms, missed detection, source- and observed-batch delays, alarm counts by state, recovery violations |
+| `model_phase_summary.csv` | One row per run, model and phase (plus `overall`): precision, recall, F1, FPR, ROC-AUC, average precision, precision@100 for every static and adaptive model |
 | `<scenario>/seed_<seed>/drift_events.json` | Every logged alarm, confirmed or suppressed |
-| `<scenario>/seed_<seed>/study_run.json` | `drift_start_batch`, `last_scored_batch`, alarm counts, recovery violations |
+| `<scenario>/seed_<seed>/study_run.json` | Everything above for one run |
 | `<scenario>/seed_<seed>/run_manifest.json` | Full configuration and run summary |
+| `<scenario>/seed_<seed>/evaluation/` | Evaluation CSVs, figures and dashboards (with `--evaluation-outputs`) |
 
 Only `project.random_seed` changes between seeds. `drift.random_seed` is kept
 fixed, so every seed sees the same drift and the seeds measure model,
 shuffling and detector-sampling variability.
 
-`drift_start_batch` (first source batch outside `pre_drift`, `None` without
-drift) and the saved events are the inputs to the detector scoring in the
-evaluation package: false alarms, missed detections, and source- and
-observed-batch delays.
+Detector quality is scored by `evaluation.detectors` against
+`drift_start_batch`, the first source batch outside `pre_drift` (`None`
+without drift). With no drift every confirmed alarm is a false alarm. A
+detection counted there may have `observed_batch` after the last scored batch;
+`confirmed_after_stream_end` in `detector_summary.csv` shows those, since they
+cannot change any prediction.
 
 The script exits with a non-zero status if any confirmed alarm breaks the
 recovery contract: retraining on 1 to `recent_window_rows` rows, only from

@@ -16,10 +16,17 @@ For every run the study keeps:
 - ``last_scored_batch``: the last batch scored in the stream. Labels still
   queued when the stream ends are learned afterwards, so an alarm with
   ``observed_batch > last_scored_batch`` can no longer change any prediction;
-- recovery violations found by :func:`check_recovery`.
+- recovery violations found by :func:`check_recovery`;
+- detector quality from ``evaluation.detectors`` (false alarms, missed
+  detection, source- and observed-batch delays), scored against
+  ``drift_start_batch``;
+- overall and per-phase metrics for every model from the evaluation
+  recorder, so adaptive models can be compared with the frozen baselines.
 
-Scoring false alarms, missed detections and delays is done by the evaluation
-package; the saved runs carry exactly the inputs it needs.
+Default scenarios use ``drift.scenario`` together with a matching
+``drift.enabled``, so they mean the same thing whether or not the installed
+injector supports named scenarios. ``camouflage`` is added automatically
+when the injector provides it.
 """
 
 from __future__ import annotations
@@ -32,9 +39,12 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
 import yaml
 
 from sentinelflow.config import ProjectConfig
+from sentinelflow.evaluation.detectors import DetectorQuality, evaluate_all_detectors
+from sentinelflow.evaluation.recorder import EvaluationRecorder
 from sentinelflow.experiment import ExperimentSummary, run_experiment, write_experiment_artifacts
 from sentinelflow.models.adaptive import DETECTOR_NAMES
 from sentinelflow.models.common import (
@@ -43,13 +53,18 @@ from sentinelflow.models.common import (
     ALARM_SUPPRESSED_GRACE,
     DriftEvent,
 )
+from sentinelflow.streaming import drift_injector
 from sentinelflow.streaming.contracts import PHASE_PRE_DRIFT
 from sentinelflow.streaming.drift_injector import DriftSettings, drift_phase
 
 DEFAULT_SCENARIOS: dict[str, dict[str, Any]] = {
-    "no_drift": {"enabled": False},
-    "controlled_drift": {"enabled": True},
+    "no_drift": {"enabled": False, "scenario": "none"},
+    "separability": {"enabled": True, "scenario": "separability"},
 }
+if "camouflage" in getattr(drift_injector, "SCENARIOS", ()):
+    DEFAULT_SCENARIOS["camouflage"] = {"enabled": True, "scenario": "camouflage"}
+
+DETECTOR_MODELS = (("adaptive_adwin", "adwin"), ("adaptive_ddm", "ddm"))
 
 ALARM_STATES = (ALARM_CONFIRMED, ALARM_SUPPRESSED_GRACE, ALARM_SUPPRESSED_COOLDOWN)
 
@@ -66,6 +81,9 @@ class StudyRun:
     summary: ExperimentSummary
     events: tuple[DriftEvent, ...]
     recovery_violations: tuple[str, ...]
+    detector_quality: tuple[DetectorQuality, ...] = ()
+    overall_metrics: dict[str, dict[str, Any]] = field(default_factory=dict)
+    phase_metrics: dict[str, dict[str, dict[str, Any]]] = field(default_factory=dict)
 
     def alarm_counts(self) -> dict[str, dict[str, int]]:
         """Count alarms per detector model and state.
@@ -99,6 +117,9 @@ class StudyRun:
             "summary": self.summary.to_dict(),
             "alarm_counts": self.alarm_counts(),
             "recovery_violations": list(self.recovery_violations),
+            "detector_quality": [asdict(quality) for quality in self.detector_quality],
+            "overall_metrics": self.overall_metrics,
+            "phase_metrics": self.phase_metrics,
             "events": [asdict(event) for event in self.events],
         }
 
@@ -209,15 +230,20 @@ def run_detector_study(
     scenarios: Mapping[str, Mapping[str, Any]] | None = None,
     max_evaluation_rows: int | None = None,
     output_directory: str | Path | None = None,
+    evaluation_outputs: bool = False,
 ) -> DetectorStudy:
     """Run every scenario with every seed and optionally write the artifacts.
 
     Artifacts, when ``output_directory`` is given::
 
         detector_study.json                 parameters and every run
+        detector_summary.csv                one row per run and detector
+        model_phase_summary.csv             one row per run, model and phase
         <scenario>/seed_<seed>/             run_manifest.json,
                                             feature_manifest.json,
                                             drift_events.json, study_run.json
+        <scenario>/seed_<seed>/evaluation/  CSVs, figures and dashboards,
+                                            only with ``evaluation_outputs``
     """
 
     if not seeds:
@@ -236,18 +262,22 @@ def run_detector_study(
     for scenario, overrides in scenarios.items():
         for seed in seeds:
             run_config = scenario_config(config, seed=seed, drift_overrides=overrides)
-            result = run_experiment(run_config, max_evaluation_rows=max_evaluation_rows)
+            recorder = EvaluationRecorder.from_config(run_config)
+            result = run_experiment(
+                run_config, recorder=recorder, max_evaluation_rows=max_evaluation_rows
+            )
             summary = result.summary
+            start = drift_start_batch(
+                run_config.section("drift"),
+                summary.evaluation_rows,
+                run_config.batch_size,
+            )
 
             run = StudyRun(
                 scenario=scenario,
                 seed=int(seed),
                 drift_overrides=dict(overrides),
-                drift_start_batch=drift_start_batch(
-                    run_config.section("drift"),
-                    summary.evaluation_rows,
-                    run_config.batch_size,
-                ),
+                drift_start_batch=start,
                 last_scored_batch=summary.batch_count - 1,
                 summary=summary,
                 events=result.drift_events,
@@ -258,6 +288,18 @@ def run_detector_study(
                         label_delay_batches=run_config.label_delay_batches,
                     )
                 ),
+                detector_quality=tuple(
+                    evaluate_all_detectors(
+                        result.drift_events,
+                        drift_start_batch=start,
+                        expected_detectors=DETECTOR_MODELS,
+                    )
+                ),
+                overall_metrics={
+                    model: _clean(asdict(metrics))
+                    for model, metrics in recorder.overall_metrics().items()
+                },
+                phase_metrics=_phase_metrics(recorder),
             )
             runs.append(run)
 
@@ -265,6 +307,10 @@ def run_detector_study(
                 run_directory = output / scenario / f"seed_{seed}"
                 write_experiment_artifacts(result, run_config, run_directory)
                 _write_json(run_directory / "study_run.json", run.to_dict())
+                if evaluation_outputs:
+                    from sentinelflow.evaluation.pipeline import generate_evaluation_outputs
+
+                    generate_evaluation_outputs(recorder, result, run_directory / "evaluation")
 
     study = DetectorStudy(
         parameters=study_parameters(
@@ -278,8 +324,65 @@ def run_detector_study(
 
     if output is not None:
         _write_json(output / "detector_study.json", study.to_dict())
+        detector_summary_frame(study).to_csv(output / "detector_summary.csv", index=False)
+        model_phase_frame(study).to_csv(output / "model_phase_summary.csv", index=False)
 
     return study
+
+
+def detector_summary_frame(study: DetectorStudy) -> pd.DataFrame:
+    """One row per (scenario, seed, detector) with quality and alarm counts."""
+
+    rows = []
+    for run in study.runs:
+        counts = run.alarm_counts()
+        for quality in run.detector_quality:
+            row = {
+                "scenario": run.scenario,
+                "seed": run.seed,
+                "drift_start_batch": run.drift_start_batch,
+                "last_scored_batch": run.last_scored_batch,
+                **asdict(quality),
+            }
+            row.update(counts.get(quality.model, {}))
+            row["recovery_violations"] = len(run.recovery_violations)
+            rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def model_phase_frame(study: DetectorStudy) -> pd.DataFrame:
+    """One row per (scenario, seed, model, phase), plus an ``overall`` phase."""
+
+    rows = []
+    for run in study.runs:
+        for model, metrics in run.overall_metrics.items():
+            rows.append(
+                {"scenario": run.scenario, "seed": run.seed, "model": model, "phase": "overall"}
+                | metrics
+            )
+        for model, phases in run.phase_metrics.items():
+            for phase, metrics in phases.items():
+                rows.append(
+                    {"scenario": run.scenario, "seed": run.seed, "model": model, "phase": phase}
+                    | metrics
+                )
+    return pd.DataFrame(rows)
+
+
+def _phase_metrics(recorder: EvaluationRecorder) -> dict[str, dict[str, dict[str, Any]]]:
+    phases: dict[str, dict[str, dict[str, Any]]] = {}
+    for (model, phase), metrics in recorder.phase_metrics().items():
+        phases.setdefault(model, {})[phase] = _clean(asdict(metrics))
+    return phases
+
+
+def _clean(values: dict[str, Any]) -> dict[str, Any]:
+    """Replace NaN (for example AUC on a one-class phase) with ``None`` for JSON."""
+
+    return {
+        key: None if isinstance(value, float) and math.isnan(value) else value
+        for key, value in values.items()
+    }
 
 
 def study_parameters(
