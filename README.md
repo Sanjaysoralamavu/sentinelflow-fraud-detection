@@ -91,6 +91,8 @@ Accuracy is not a primary metric because fraud transactions are rare.
 5. Add controlled drift experiments and adaptation logic.
 6. Produce result plots, final report material, and demonstration workflow.
 
+The controlled-drift scenarios (`none`, `separability`, `camouflage`) are selected with `drift.scenario` and documented in [docs/DRIFT_SCENARIOS.md](docs/DRIFT_SCENARIOS.md).
+
 ## Running the Evaluation
 
 The official SentinelFlow CLI runs the experiment and automatically generates the evaluation outputs.

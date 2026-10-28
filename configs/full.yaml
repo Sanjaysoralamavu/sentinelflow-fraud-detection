@@ -25,6 +25,9 @@ stream:
 
 drift:
   enabled: true
+  # Optional: scenario overrides "enabled" when present.
+  #   scenario: none | separability | camouflage   (see docs/DRIFT_SCENARIOS.md)
+  #   camouflage: {strength: 1.0, top_k: 4, categorical_top_k: 8}
   start_fraction: 0.45
   end_fraction: 0.70
   max_intensity: 0.90
