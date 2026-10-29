@@ -13,8 +13,8 @@ the timing limits they impose.
   7-batch label delay). ADWIN did this with no false alarms.
 - **Detection plus recovery pays off.** In the fully drifted camouflage phase,
   adaptive_adwin keeps recall at 0.921 and F1 at 0.953, against 0.616 and
-  0.760 for the same learner without a detector (adaptive_none) and 0.616 and
-  0.762 for the frozen random forest.
+  0.760 for the same learner without a detector (adaptive_none) and 0.608 and
+  0.755 for the frozen random forest.
 - **Separability drift is not detected, and does not need to be.** It makes
   fraud easier to separate, so every model's error falls and there is nothing
   to recover from.
@@ -153,7 +153,7 @@ detectors to act on.
 | Model | Recall | Precision | F1 | FPR % | ROC-AUC | Avg. precision |
 | --- | --- | --- | --- | --- | --- | --- |
 | static_logistic | 0.478 ± 0.088 | 0.994 | 0.642 ± 0.083 | 0.054 | 0.982 | 0.939 |
-| static_random_forest | 0.616 ± 0.037 | 0.999 | 0.762 ± 0.029 | 0.007 | 0.993 | 0.977 |
+| static_random_forest | 0.608 ± 0.049 | 0.999 | 0.755 ± 0.038 | 0.007 | 0.993 | 0.977 |
 | adaptive_none | 0.616 ± 0.023 | 0.995 | 0.760 ± 0.018 | 0.051 | 0.989 | 0.965 |
 | **adaptive_adwin** | **0.921 ± 0.008** | 0.989 | **0.953 ± 0.004** | 0.190 | 0.994 | 0.987 |
 | adaptive_ddm | 0.906 ± 0.054 | 0.987 | 0.944 ± 0.031 | 0.218 | 0.994 | 0.985 |
