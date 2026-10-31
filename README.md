@@ -464,7 +464,27 @@ The final comparison dashboard evaluates concept drift in Card-Not-Present (CNP)
 - **Initial Evaluation — Original Controlled Drift:** the original drift increased fraud-versus-legitimate separation and produced little meaningful performance degradation.
 - **Revised Evaluation — Camouflage Drift:** fraudulent behavior is moved closer to legitimate behavior, creating a more challenging drift condition for evaluating adaptive recovery.
 
+## Concept Drift Evaluation Dashboard
+
 The dashboard compares frozen static models, adaptive models using ADWIN and DDM drift detection, and an online ensemble across pre-drift, ramp-drift, and fully drifted phases.
+
+### Dashboard Overview
+
+![Concept Drift Evaluation Dashboard](docs/images/dashboard1.jpg)
+
+### Evaluation Comparison
+
+![Initial and Revised Evaluation Comparison](docs/images/dashboard2.jpg)
+
+### Interactive Dashboard
+
+**[View the dashboard HTML](results/experiment_comparison/index.html)**
+
+To use the interactive dashboard, clone or download the repository and open:
+
+```powershell
+Start-Process results\experiment_comparison\index.html
+```
 
 Available evaluation metrics include:
 
@@ -485,11 +505,7 @@ The dashboard also provides:
 - Concept-drift detection and recovery evidence
 - Detector alarms, false alarms, detection delay, and retraining information
 
-The comparison dashboard is generated locally at:
-
-```text
-results/experiment_comparison/index.html
-```
+### Open the Dashboard Locally
 
 On macOS:
 
@@ -509,7 +525,7 @@ On Windows PowerShell:
 Start-Process results\experiment_comparison\index.html
 ```
 
-The dashboard uses the final local outputs from the original controlled-drift and camouflage-drift evaluations. Generated experiment artifacts remain excluded from Git because they can be regenerated from the experiment configurations.
+The dashboard uses results from the original controlled-drift and revised camouflage-drift evaluations.
 
 ---
 

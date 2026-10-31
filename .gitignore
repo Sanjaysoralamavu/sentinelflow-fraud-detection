@@ -49,4 +49,7 @@ results/tmp/
 results/metrics/experiment/
 results/final_separability/
 results/final_camouflage/
-results/experiment_comparison/
+
+# Keep the final comparison dashboard
+results/experiment_comparison/*
+!results/experiment_comparison/index.html
