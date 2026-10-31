@@ -47,3 +47,6 @@ results/tmp/
 
 # Generated experiment artifacts
 results/metrics/experiment/
+results/final_separability/
+results/final_camouflage/
+results/experiment_comparison/
