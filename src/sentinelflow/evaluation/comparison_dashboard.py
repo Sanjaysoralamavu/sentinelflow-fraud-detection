@@ -1,4 +1,5 @@
 """Interactive comparison dashboard for SentinelFlow concept-drift evaluations."""
+
 # ruff: noqa: E501
 from __future__ import annotations
 
