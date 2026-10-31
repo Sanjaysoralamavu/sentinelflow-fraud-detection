@@ -1135,7 +1135,9 @@ button { font: inherit; }
 <p><strong>CreditTransAct</strong><br>Source transaction dataset used by the project.</p>
 <p><strong>CNP transaction stream</strong><br>Card-Not-Present transactions used for streaming fraud detection.</p>
 <p><strong>500,000 warm-up rows</strong><br>Historical rows used before stream evaluation.</p>
+<p><strong>1.5M evaluation rows</strong><br>Transactions evaluated across the controlled-drift stream.</p>
 <p><strong>50,000 rows per batch</strong><br>Sequential evaluation batch size.</p>
+<p><strong>30 evaluation batches</strong><br>Evaluation stream processed across 30 sequential batches.</p>
 <p><strong>7-batch label delay</strong><br>Fraud labels become available seven batches after prediction.</p>
 </div>
 
