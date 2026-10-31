@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concept Drift in CNP Fraud Detection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+:root {
+    --ink: #1d1d1f;
+    --muted: #6e6e73;
+    --bg: #f5f5f7;
+    --surface: #ffffff;
+    --line: #d2d2d7;
+    --line-soft: #e5e5ea;
+    --plot-bg: #f2f2f5;
+    --accent: #0e7c86;
+    --recovery: #6b3fa0;
+    --recovery-tint: #f5effb;
+    --recovery-border: #cdb6e6;
+    --initial: #f2b705;
+    --initial-ink: #7a5800;
+    --initial-tint: #fff9db;
+    --initial-border: #f1d96a;
+    --revised: #16803a;
+    --revised-tint: #eefaf1;
+    --revised-border: #a8dbb7;
+    --good: #2e7d32;
+    --bad: #c0261c;
+    --static: #6e6e73;
+    --focus-fill: #fff3bf;
+    --focus-hover: #ffe680;
+    --font: "Lexend", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+button { font: inherit; }
+
+:focus-visible {
+    outline: 2px solid var(--initial-ink);
+    outline-offset: 2px;
+}
+
+.dashboard { width: 100%; min-height: 105vh; padding: 5px; }
+
+.main-page {
+    display: grid;
+    width: 100%;
+    min-height: 105vh;
+    grid-template-rows: auto minmax(0, 3fr) minmax(0, 1fr) minmax(0, 5fr);
+}
+
+/* ---- Hero ---- */
+.hero { padding: 3px 8px 14px; }
+
+.hero h1 {
+    margin: 0;
+    font-size: clamp(27px, 2.25vw, 40px);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.005em;
+}
+
+.subtitle {
+    margin: 3px 0 5px;
+    color: var(--accent);
+    font-size: clamp(14px, 1.15vw, 20px);
+    font-weight: 600;
+    letter-spacing: -0.005em;
+}
+
+.hero-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 1100px;
+    font-size: clamp(10px, 0.78vw, 13px);
+    line-height: 1.45;
+}
+
+.hero-copy p { margin: 0; }
+.hero-copy .definition { color: var(--muted); }
+
+/* ---- Context row ---- */
+.context-row {
+    display: grid;
+    grid-template-columns: 21% 27% 52%;
+    gap: 6px;
+    min-height: 0;
+}
+
+.context-panel {
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 10px;
+}
+
+.context-panel h2 {
+    margin: 0 0 6px;
+    font-size: clamp(15px, 1.1vw, 19px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.context-panel p {
+    margin: 0 0 6px;
+    font-size: clamp(9px, 0.7vw, 11.5px);
+    line-height: 1.3;
+}
+
+.context-panel strong { color: var(--accent); }
+
+.model-group {
+    margin: 0 0 6px;
+    font-size: clamp(9px, 0.7vw, 11.5px);
+    line-height: 1.3;
+}
+
+.model-group:last-child { margin-bottom: 0; }
+.model-group b { display: block; margin-bottom: 3px; color: var(--accent); }
+
+.model-item { margin: 0 0 4px 8px; }
+.model-name { display: block; font-weight: 600; }
+.model-desc { display: block; color: var(--muted); font-size: 0.92em; line-height: 1.25; }
+
+/* ---- Architecture ---- */
+.architecture { padding: 6px 8px 3px; }
+.architecture h2 { margin: 0 0 2px; }
+
+.architecture-stage {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: calc(100% - 25px);
+    overflow: hidden;
+}
+
+.architecture svg { display: block; width: 97%; height: 95%; }
+
+.node rect {
+    fill: var(--surface);
+    stroke: var(--accent);
+    stroke-width: 1.15;
+    rx: 6;
+}
+
+.node text {
+    fill: var(--ink);
+    font-family: var(--font);
+    font-size: 12px;
+    text-anchor: middle;
+}
+
+.arrow-head { fill: var(--muted); }
+
+.edge {
+    fill: none;
+    stroke: var(--muted);
+    stroke-width: 1.15;
+    marker-end: url(#architecture-arrow);
+}
+
+.connector { fill: none; stroke: var(--muted); stroke-width: 1.15; }
+
+.edge-label {
+    fill: var(--muted);
+    font-family: var(--font);
+    font-size: 9px;
+    text-anchor: middle;
+}
+
+.eval-node { cursor: pointer; }
+
+.eval-node rect {
+    fill: var(--focus-fill);
+    stroke: var(--initial);
+    stroke-width: 3;
+}
+
+.eval-node text { fill: var(--initial-ink); font-weight: 700; }
+.eval-node:hover rect { fill: var(--focus-hover); }
+
+/* ---- Metric row ---- */
+.metric-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    min-height: 0;
+    align-items: center;
+    padding: 5px 9px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+
+.metric-controls { min-width: 0; display: grid; grid-template-rows: auto auto auto; gap: 4px; }
+
+.metric-title { margin: 0; font-size: clamp(11px, 0.82vw, 13px); font-weight: 700; }
+
+.metric-buttons { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+
+.metric-button {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 980px;
+    padding: 4px 11px;
+    cursor: pointer;
+    font-size: clamp(8px, 0.64vw, 10px);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.metric-button:hover { border-color: var(--initial); }
+
+.metric-button.active {
+    border-color: var(--initial);
+    background: var(--initial);
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.metric-explanation {
+    margin-top: 1px;
+    min-height: 25px;
+    padding: 4px 0;
+    color: var(--muted);
+    font-size: clamp(8px, 0.62vw, 10px);
+    line-height: 1.25;
+}
+
+.results-button {
+    border: 2px solid var(--revised);
+    background: var(--revised-tint);
+    color: var(--revised);
+    border-radius: 980px;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: clamp(9px, 0.72vw, 11.5px);
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+
+.results-button:hover { background: var(--revised-border); }
+
+/* ---- Evaluation area ---- */
+.evaluation-area {
+    display: grid;
+    grid-template-rows: 70% 30%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.evaluation-top { display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
+
+.evaluation-column {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-width: 0;
+    min-height: 0;
+    border: 1px solid var(--line);
+    padding: 8px 9px;
+}
+
+.evaluation-column:first-child { background: var(--initial-tint); border-color: var(--initial-border); }
+.evaluation-column:last-child { background: var(--revised-tint); border-color: var(--revised-border); }
+.evaluation-column + .evaluation-column { border-left: 2px solid var(--revised-border); }
+
+.evaluation-heading {
+    margin: 0 0 2px;
+    font-size: clamp(13px, 1vw, 17px);
+    font-weight: 700;
+    letter-spacing: -0.005em;
+}
+
+.evaluation-column:first-child .evaluation-heading { color: var(--initial-ink); }
+.evaluation-column:last-child .evaluation-heading { color: var(--revised); }
+
+.evaluation-subtitle { margin: 0 0 5px; color: var(--muted); font-size: clamp(8px, 0.62vw, 10px); }
+
+.chart-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 7px;
+    min-height: 0;
+}
+
+.chart-panel {
+    min-width: 0;
+    min-height: 0;
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.evaluation-column:first-child .chart-panel { border-color: var(--initial-border); }
+.evaluation-column:last-child .chart-panel { border-color: var(--revised-border); }
+
+.chart-label { margin: 6px 8px 0; font-size: clamp(9px, 0.68vw, 11px); font-weight: 700; }
+.chart { width: 100%; height: calc(100% - 21px); }
+
+.explanation-grid { display: grid; grid-template-columns: repeat(4, 1fr); min-height: 0; }
+
+.explanation-box {
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 8px 10px;
+    border: 1px solid var(--line);
+}
+
+.explanation-box:nth-child(-n + 2) { background: var(--initial-tint); border-color: var(--initial-border); }
+.explanation-box:nth-child(n + 3) { background: var(--revised-tint); border-color: var(--revised-border); }
+.explanation-box + .explanation-box { border-left: 0; }
+
+.explanation-box h3 { margin: 0 0 5px; font-size: clamp(9px, 0.72vw, 12px); font-weight: 700; }
+.explanation-box:nth-child(-n + 2) h3 { color: var(--initial-ink); }
+.explanation-box:nth-child(n + 3) h3 { color: var(--revised); }
+
+.explanation-box p {
+    margin: 0 0 4px;
+    color: var(--ink);
+    font-size: clamp(7.5px, 0.58vw, 9.5px);
+    line-height: 1.35;
+}
+
+/* ---- Comparison page ---- */
+.comparison-page {
+    display: none;
+    width: 100%;
+    min-height: 100vh;
+    padding: 10px 14px 14px;
+    grid-template-rows: auto auto auto auto;
+    gap: 10px;
+}
+
+.comparison-page.active { display: grid; }
+
+.comparison-header { display: flex; align-items: center; gap: 12px; }
+
+.back-button {
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #ffffff;
+    padding: 7px 16px;
+    cursor: pointer;
+    border-radius: 980px;
+    font-weight: 600;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.back-button:hover { background: #0a626a; border-color: #0a626a; }
+
+.comparison-header h1 {
+    margin: 0;
+    font-size: clamp(21px, 1.9vw, 31px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.comparison-evaluations { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.comparison-evaluation {
+    border: 1px solid var(--initial-border);
+    background: var(--initial-tint);
+    border-radius: 12px;
+    padding: 13px 15px;
+}
+
+.comparison-evaluation.revised { background: var(--revised-tint); border-color: var(--revised-border); }
+
+.comparison-evaluation h2 {
+    margin: 0 0 4px;
+    font-size: clamp(17px, 1.35vw, 23px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--initial-ink);
+}
+
+.comparison-evaluation.revised h2 { color: var(--revised); }
+
+.comparison-intro {
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: clamp(10px, 0.78vw, 13px);
+    line-height: 1.4;
+}
+
+.table-metric {
+    margin: 0 0 5px;
+    font-size: clamp(11px, 0.85vw, 14px);
+    font-weight: 700;
+}
+
+.model-comparison-table {
+    display: grid;
+    grid-template-columns: minmax(150px, 1.35fr) repeat(3, minmax(80px, 1fr));
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.comparison-cell {
+    min-width: 0;
+    padding: 9px 8px;
+    border-right: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+    text-align: center;
+    font-size: clamp(10px, 0.78vw, 13px);
+}
+
+.comparison-cell:nth-child(4n) { border-right: 0; }
+.comparison-cell.header { background: var(--bg); color: var(--muted); font-weight: 600; }
+.comparison-cell.model { text-align: left; font-weight: 600; }
+.comparison-cell.static-model { border-left: 4px solid var(--static); }
+.comparison-cell.adwin-model { border-left: 4px solid var(--initial); }
+.comparison-cell.ddm-model { border-left: 4px solid var(--revised); }
+
+.comparison-cell.value {
+    font-size: clamp(14px, 1.1vw, 18px);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.comparison-cell.degraded { color: var(--bad); }
+.comparison-cell.recovered { color: var(--good); }
+
+.comparison-interpretation {
+    margin: 12px 0 0;
+    padding: 0;
+    font-size: clamp(10px, 0.75vw, 12px);
+    line-height: 1.5;
+}
+
+.recovery-section {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 13px 15px;
+}
+
+.recovery-section h2 {
+    margin: 0 0 5px;
+    font-size: clamp(17px, 1.35vw, 22px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+.recovery-subtitle { margin: 0 0 10px; color: var(--muted); font-size: clamp(10px, 0.78vw, 13px); }
+
+.recovery-grid { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 10px; }
+
+.detector-card,
+.recovery-result {
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: var(--bg);
+}
+
+.detector-card:nth-child(1) { border-top: 3px solid var(--initial); }
+.detector-card:nth-child(2) { border-top: 3px solid var(--revised); }
+.recovery-result {
+    border-color: var(--recovery-border);
+    border-top: 3px solid var(--recovery);
+    background: var(--recovery-tint);
+}
+
+.detector-card h3,
+.recovery-result h3 { margin: 0 0 7px; font-size: clamp(13px, 0.95vw, 16px); font-weight: 700; }
+.recovery-result h3 { color: var(--recovery); }
+
+.detector-card p,
+.recovery-result p { margin: 3px 0; font-size: clamp(9px, 0.72vw, 12px); line-height: 1.35; }
+
+.key-finding {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 6px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: clamp(12px, 0.95vw, 15px);
+    line-height: 1.55;
+}
+
+.key-finding strong { color: var(--accent); }
+
+.recovery-arrow { margin: 8px 0; font-size: clamp(11px, 0.8vw, 13px); font-weight: 700; color: var(--recovery); }
+
+@media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+
+<body>
+<div class="dashboard">
+
+<main class="main-page" id="main-page">
+
+<section class="hero">
+<h1>Concept Drift in CNP Fraud Detection</h1>
+<div class="subtitle">Static vs. adaptive model performance under controlled concept-drift scenarios</div>
+<div class="hero-copy">
+<p><strong>Purpose:</strong> Compare how static and adaptive fraud models behave across controlled concept-drift phases and determine whether adaptation helps as transaction behavior changes.</p>
+<p class="definition"><strong>Concept drift:</strong> the relationship between transaction characteristics and fraud changes over time, so models trained on earlier behavior may become less effective.</p>
+</div>
+</section>
+
+<section class="context-row">
+
+<div class="context-panel">
+<h2>Dataset</h2>
+<p><strong>CreditTransAct</strong><br>Source transaction dataset used by the project.</p>
+<p><strong>CNP transaction stream</strong><br>Card-Not-Present transactions used for streaming fraud detection.</p>
+<p><strong>500,000 warm-up rows</strong><br>Historical rows used before stream evaluation.</p>
+<p><strong>1.5M evaluation rows</strong><br>Transactions evaluated across the controlled-drift stream.</p>
+<p><strong>50,000 rows per batch</strong><br>Sequential evaluation batch size.</p>
+<p><strong>30 evaluation batches</strong><br>Evaluation stream processed across 30 sequential batches.</p>
+<p><strong>7-batch label delay</strong><br>Fraud labels become available seven batches after prediction.</p>
+</div>
+
+<div class="context-panel">
+<h2>Models Compared</h2>
+<div class="model-group"><b>1. Frozen Static Models</b>
+<div class="model-item"><span class="model-name">Logistic Regression</span><span class="model-desc">Simple linear baseline; frozen after warm-up.</span></div>
+<div class="model-item"><span class="model-name">Random Forest</span><span class="model-desc">Nonlinear baseline; frozen after warm-up.</span></div>
+</div>
+<div class="model-group"><b>2. Adaptive Models</b>
+<div class="model-item"><span class="model-name">Adaptive None</span><span class="model-desc">Online updates, but no drift detection.</span></div>
+<div class="model-item"><span class="model-name">Adaptive ADWIN</span><span class="model-desc">ADWIN detection + detector-triggered retraining.</span></div>
+<div class="model-item"><span class="model-name">Adaptive DDM</span><span class="model-desc">DDM detection + detector-triggered retraining.</span></div>
+</div>
+<div class="model-group"><b>3. Online Ensemble</b>
+<div class="model-item"><span class="model-name">5× Incremental Logistic Regression</span><span class="model-desc">Online bagging; continuously updates, no drift detector.</span></div>
+</div>
+</div>
+
+<div class="context-panel architecture">
+<h2>System Architecture</h2>
+<div class="architecture-stage">
+<svg viewBox="0 0 1280 360" role="img" aria-label="Streaming fraud detection system architecture">
+<defs>
+<marker id="architecture-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+<path class="arrow-head" d="M0,0 L0,6 L8,3 z"/>
+</marker>
+</defs>
+
+<g class="node"><rect x="10" y="125" width="120" height="75"/>
+<text x="70" y="150">Seeded</text><text x="70" y="168">sequential</text><text x="70" y="186">stream</text></g>
+
+<path class="edge" d="M130 162 L150 162 L150 68 L175 68"/>
+<path class="edge" d="M130 162 L150 162 L150 280 L175 280"/>
+
+<g class="node"><rect x="175" y="38" width="135" height="60"/>
+<text x="242" y="63">500,000-row</text><text x="242" y="81">warm-up</text></g>
+
+<path class="edge" d="M310 68 L340 68"/>
+
+<g class="node"><rect x="340" y="38" width="135" height="60"/>
+<text x="407" y="63">Frozen</text><text x="407" y="81">preprocessing</text></g>
+
+<path class="connector" d="M475 68 L1035 68"/>
+<path class="connector" d="M1035 22 L1035 160"/>
+
+<path class="edge" d="M1035 22 L1060 22"/>
+<g class="node"><rect x="1060" y="4" width="125" height="36"/>
+<text x="1122" y="27">Static Logistic</text></g>
+
+<path class="edge" d="M1035 68 L1060 68"/>
+<g class="node"><rect x="1060" y="46" width="125" height="44"/>
+<text x="1122" y="65">Static Random</text><text x="1122" y="81">Forest</text></g>
+
+<path class="edge" d="M1035 114 L1060 114"/>
+<g class="node"><rect x="1060" y="96" width="125" height="36"/>
+<text x="1122" y="119">Online Ensemble</text></g>
+
+<path class="edge" d="M1035 160 L1060 160"/>
+<g class="node"><rect x="1060" y="138" width="125" height="44"/>
+<text x="1122" y="157">Adaptive</text><text x="1122" y="173">models</text></g>
+
+<g class="node"><rect x="175" y="247" width="135" height="66"/>
+<text x="242" y="271">50,000-row</text><text x="242" y="289">evaluation batches</text></g>
+
+<path class="edge" d="M310 280 L340 280"/>
+
+<g class="node"><rect x="340" y="247" width="135" height="66"/>
+<text x="407" y="272">Controlled drift</text><text x="407" y="290">scenario</text></g>
+
+<path class="edge" d="M475 280 L520 280"/>
+
+<g class="node"><rect x="520" y="247" width="120" height="66"/>
+<text x="580" y="272">Model</text><text x="580" y="290">predictions</text></g>
+
+<path class="edge" d="M640 280 L665 280 L665 220 L690 220"/>
+
+<g class="node"><rect x="690" y="190" width="125" height="60"/>
+<text x="752" y="214">Seven-batch</text><text x="752" y="232">label delay</text></g>
+
+<path class="edge" d="M815 220 L840 220"/>
+
+<g class="node"><rect x="840" y="190" width="125" height="60"/>
+<text x="902" y="225">ADWIN and DDM</text></g>
+
+<path class="edge" d="M965 220 L990 220"/>
+<text class="edge-label" x="977" y="183">Confirmed alarm</text>
+
+<g class="node"><rect x="990" y="190" width="135" height="60"/>
+<text x="1057" y="214">Recent-window</text><text x="1057" y="232">retraining</text></g>
+
+<path class="edge" d="M1125 220 L1215 220 L1215 160 L1185 160"/>
+<text class="edge-label" x="1170" y="212">Retrained</text>
+
+<path class="edge" d="M640 280 L665 280 L665 330 L690 330"/>
+
+<g class="node eval-node" id="evaluation-node" tabindex="0" role="button" aria-label="Focus evaluation results">
+<title>Focus the evaluation results below</title>
+<rect x="690" y="302" width="125" height="55"/>
+<text x="752" y="324">EVALUATION</text><text x="752" y="343">Explore results →</text></g>
+
+</svg>
+</div>
+</div>
+
+</section>
+
+<section class="metric-row" id="metric-row">
+<div class="metric-controls">
+<div class="metric-title">Evaluation Metrics</div>
+<div class="metric-buttons">
+<button class="metric-button" type="button" data-metric="precision">Precision</button>
+<button class="metric-button active" type="button" data-metric="recall">Recall</button>
+<button class="metric-button" type="button" data-metric="f1">F1</button>
+<button class="metric-button" type="button" data-metric="fpr">FPR</button>
+<button class="metric-button" type="button" data-metric="roc_auc">ROC-AUC</button>
+<button class="metric-button" type="button" data-metric="average_precision">Avg. Precision</button>
+<button class="metric-button" type="button" data-metric="precision_at_100">P@100</button>
+</div>
+<div class="metric-explanation" id="initial-metric-explanation"></div>
+</div>
+<button class="results-button" id="results-button" type="button">RESULTS BETWEEN THE TWO EVALUATIONS →</button>
+</section>
+
+<section class="evaluation-area" id="evaluation-area">
+
+<div class="evaluation-top">
+
+<div class="evaluation-column">
+<div>
+<h2 class="evaluation-heading">Initial Evaluation — Original Controlled Drift</h2>
+<p class="evaluation-subtitle">Performance across pre-drift, ramp-drift, and fully drifted phases.</p>
+</div>
+<div class="chart-grid">
+<div class="chart-panel"><div class="chart-label">Model Performance Across Drift Phases</div><div class="chart" id="initial-performance"></div></div>
+<div class="chart-panel"><div class="chart-label">Relative Loss</div><div class="chart" id="initial-loss"></div></div>
+</div>
+</div>
+
+<div class="evaluation-column">
+<div>
+<h2 class="evaluation-heading">Revised Evaluation — Camouflage Drift</h2>
+<p class="evaluation-subtitle">Performance across pre-drift, ramp-drift, and fully drifted phases.</p>
+</div>
+<div class="chart-grid">
+<div class="chart-panel"><div class="chart-label">Model Performance Across Drift Phases</div><div class="chart" id="revised-performance"></div></div>
+<div class="chart-panel"><div class="chart-label">Relative Loss</div><div class="chart" id="revised-loss"></div></div>
+</div>
+</div>
+
+</div>
+
+<div class="explanation-grid">
+
+<div class="explanation-box">
+<h3>Why was Static Random Forest already extremely strong?</h3>
+<p>The initial evaluation showed near-perfect pre-drift performance because the data contained highly discriminative fraud-related attributes.</p>
+<p>Follow-up feature audit and ablation work found no evidence that this strength came from direct target leakage.</p>
+</div>
+
+<div class="explanation-box">
+<h3>Why did Static Random Forest improve after the original drift?</h3>
+<p>The original drift increased fraud-versus-legitimate separation across several fraud-related features, making fraud easier rather than harder to distinguish.</p>
+<p>Static RF Recall: <strong>0.993 → 0.996 → 1.000</strong></p>
+<p>Other models also remained near their pre-drift performance, leaving limited degradation for adaptive models to recover from.</p>
+</div>
+
+<div class="explanation-box">
+<h3>Why camouflage?</h3>
+<p>The original drift made fraud easier to distinguish. Camouflage drift instead moves fraudulent behavior closer to legitimate behavior, creating meaningful performance degradation.</p>
+<p>This allows us to evaluate whether drift detection and adaptive retraining can recover lost performance.</p>
+</div>
+
+<div class="explanation-box">
+<h3>What changed under camouflage drift?</h3>
+<p>Camouflage moves selected fraudulent feature distributions toward legitimate behavior, reducing class separation and creating meaningful performance degradation.</p>
+<p>Unlike the original drift, the revised scenario produces positive relative performance loss. The frozen models experience greater degradation, while ADWIN and DDM use drift detection and adaptive retraining to partially recover performance.</p>
+</div>
+
+</div>
+
+</section>
+
+</main>
+
+<section class="comparison-page" id="comparison-page">
+
+<div class="comparison-header">
+<button class="back-button" id="comparison-back" type="button">← Dashboard</button>
+<h1>Results Between the Two Evaluations</h1>
+</div>
+
+<div class="key-finding">
+<strong>Key Finding:</strong> The original drift did not create meaningful degradation. Under camouflage drift, the frozen Random Forest degraded substantially. After detector-triggered retraining, ADWIN and DDM achieved higher fully-drifted Recall and F1 than the frozen baseline, showing partial  recovery under concept drift. 
+</div>
+
+<div class="comparison-evaluations">
+
+<div class="comparison-evaluation">
+<h2>Initial Evaluation — Original Controlled Drift</h2>
+<p class="comparison-intro">The original controlled drift did not create meaningful degradation. Static Random Forest, Adaptive ADWIN, and Adaptive DDM all remained extremely strong across the drift phases.</p>
+<div class="table-metric">Recall</div>
+<div class="model-comparison-table">
+<div class="comparison-cell header">Model</div>
+<div class="comparison-cell header">Pre-drift</div>
+<div class="comparison-cell header">Ramp drift</div>
+<div class="comparison-cell header">Fully drifted</div>
+<div class="comparison-cell model static-model">Static Random Forest</div>
+<div class="comparison-cell value">0.993</div>
+<div class="comparison-cell value">0.996</div>
+<div class="comparison-cell value ">1.000</div>
+<div class="comparison-cell model adwin-model">Adaptive ADWIN</div>
+<div class="comparison-cell value">0.993</div>
+<div class="comparison-cell value">0.994</div>
+<div class="comparison-cell value ">0.997</div>
+<div class="comparison-cell model ddm-model">Adaptive DDM</div>
+<div class="comparison-cell value">0.993</div>
+<div class="comparison-cell value">0.994</div>
+<div class="comparison-cell value ">0.997</div>
+</div>
+<p class="comparison-interpretation"><strong>Interpretation:</strong> the original drift increased class separability instead of making fraud harder to detect. Because there was no meaningful degradation, the first evaluation could not clearly demonstrate the benefit of detector-triggered adaptation.</p>
+</div>
+
+<div class="comparison-evaluation revised">
+<h2>Revised Evaluation — Camouflage Drift</h2>
+<p class="comparison-intro">Camouflage drift created the intended performance pressure. The frozen Random Forest degraded, while ADWIN- and DDM-driven adaptive models recovered more fraud in the fully drifted phase.</p>
+<div class="table-metric">Recall</div>
+<div class="model-comparison-table">
+<div class="comparison-cell header">Model</div>
+<div class="comparison-cell header">Pre-drift</div>
+<div class="comparison-cell header">Ramp drift</div>
+<div class="comparison-cell header">Fully drifted</div>
+<div class="comparison-cell model static-model">Static Random Forest</div>
+<div class="comparison-cell value">0.993</div>
+<div class="comparison-cell value">0.941</div>
+<div class="comparison-cell value degraded">0.630</div>
+<div class="comparison-cell model adwin-model">Adaptive ADWIN</div>
+<div class="comparison-cell value">0.993</div>
+<div class="comparison-cell value">0.928</div>
+<div class="comparison-cell value recovered">0.669</div>
+<div class="comparison-cell model ddm-model">Adaptive DDM</div>
+<div class="comparison-cell value">0.993</div>
+<div class="comparison-cell value">0.928</div>
+<div class="comparison-cell value recovered">0.669</div>
+</div>
+<p class="comparison-interpretation"><strong>Interpretation:</strong> during the ramp phase the frozen Random Forest still had higher Recall, but after detector-triggered retraining the ADWIN and DDM adaptive models reached fully drifted Recall <strong>0.669</strong>, compared with <strong>0.630</strong> for the frozen Random Forest.</p>
+</div>
+
+</div>
+
+<div class="recovery-section">
+<h2>Concept-Drift Detection and Recovery Evidence</h2>
+<p class="recovery-subtitle">The revised evaluation shows what happened after the detectors observed the degradation through delayed labels.</p>
+
+<div class="recovery-grid">
+
+<div class="detector-card"><h3>Adaptive ADWIN</h3>
+<p><strong>Concept-drift detector:</strong> ADWIN</p>
+<p><strong>Confirmed alarms:</strong> 1</p>
+<p><strong>False alarms:</strong> 0</p>
+<p><strong>Source batch:</strong> 17</p>
+<p><strong>Observed batch:</strong> 24</p>
+<p><strong>Detection delay:</strong> 7 batches</p>
+<p><strong>Retraining window:</strong> 200,000 recent labeled rows</p>
+</div>
+<div class="detector-card"><h3>Adaptive DDM</h3>
+<p><strong>Concept-drift detector:</strong> DDM</p>
+<p><strong>Confirmed alarms:</strong> 1</p>
+<p><strong>False alarms:</strong> 0</p>
+<p><strong>Source batch:</strong> 17</p>
+<p><strong>Observed batch:</strong> 24</p>
+<p><strong>Detection delay:</strong> 7 batches</p>
+<p><strong>Retraining window:</strong> 200,000 recent labeled rows</p>
+</div>
+
+<div class="recovery-result">
+<h3>Recovery Result</h3>
+<p><strong>Static Random Forest</strong><br>Fully drifted Recall: 0.630<br>Fully drifted F1: 0.773</p>
+<div class="recovery-arrow">Drift detected → recent-window retraining → partial recovery</div>
+<p><strong>Adaptive ADWIN</strong><br>Fully drifted Recall: 0.669<br>Fully drifted F1: 0.800</p>
+<p><strong>Adaptive DDM</strong><br>Fully drifted Recall: 0.669<br>Fully drifted F1: 0.800</p>
+<p><strong>Conclusion:</strong> detector-triggered adaptation recovered part of the fraud-detection performance lost under camouflage drift. In this run, ADWIN and DDM produced the same recovery result.</p>
+</div>
+
+</div>
+</div>
+
+</section>
+
+</div>
+
+<script>
+(() => {
+    const root = document.querySelector(".dashboard");
+
+    if (!root || root.dataset.initialized === "true") {
+        return;
+    }
+
+    root.dataset.initialized = "true";
+
+    const data = {"metricLabels":{"precision":"Precision","recall":"Recall","f1":"F1","fpr":"FPR","roc_auc":"ROC-AUC","average_precision":"Average Precision","precision_at_100":"Precision@100"},"metricExplanations":{"precision":"Among transactions predicted as fraud, the proportion that are actually fraudulent.","recall":"Among actual fraud transactions, the proportion detected by the model.","f1":"The harmonic mean of Precision and Recall.","fpr":"The proportion of legitimate transactions incorrectly flagged as fraud.","roc_auc":"How well the model ranks fraud above legitimate transactions across classification thresholds.","average_precision":"A precision-recall ranking summary that is useful for imbalanced fraud-detection data.","precision_at_100":"The proportion of true fraud among the 100 highest-risk predictions."},"palette":{"ink":"#1d1d1f","muted":"#6e6e73","bg":"#f5f5f7","surface":"#ffffff","line":"#d2d2d7","line_soft":"#e5e5ea","plot_bg":"#f2f2f5","accent":"#0e7c86","recovery":"#6b3fa0","recovery_tint":"#f5effb","recovery_border":"#cdb6e6","initial":"#f2b705","initial_ink":"#7a5800","initial_tint":"#fff9db","initial_border":"#f1d96a","revised":"#16803a","revised_tint":"#eefaf1","revised_border":"#a8dbb7","good":"#2e7d32","bad":"#c0261c","static":"#6e6e73","focus_fill":"#fff3bf","focus_hover":"#ffe680"},"phaseColors":["#4e79a7","#f28e2b","#8e6bbf"],"font":"\"Lexend\", -apple-system, BlinkMacSystemFont, \"Helvetica Neue\", Arial, sans-serif","initial":{"precision":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[0.99673364804192,0.9997105375895886,0.9953440665660186,0.9953440665660186,0.9953440665660186,0.9975972368223456],"ramp":[0.9970695691886132,0.9996001447095336,0.9963105245140924,0.9963105245140924,0.9963105245140924,0.997695325892347],"drifted":[0.996838594045604,0.999664145686138,0.9974471370576076,0.9974471370576076,0.9974471370576076,0.9979790419161676]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[-0.010528991761260775,0.0046405336051000366,-0.21129080508257445,-0.21129080508257445,-0.21129080508257445,-0.03827246906158094]}},"recall":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[0.9928831760120492,0.9926992193338467,0.992986651643538,0.992986651643538,0.992986651643538,0.9928946733044368],"ramp":[0.9940431021399302,0.9959402033692518,0.993853392016998,0.993853392016998,0.993853392016998,0.9937205949309456],"drifted":[0.996565711868203,0.9999875569270588,0.996652813378792,0.996652813378792,0.996652813378792,0.995420949157604]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[-0.3708931670032705,-0.7341939483041873,-0.36920554059673216,-0.36920554059673216,-0.36920554059673216,-0.25443543218532616]}},"f1":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[0.9948046861500536,0.9961925419974156,0.994163961599558,0.994163961599558,0.994163961599558,0.995240400129074],"ramp":[0.9955540355677156,0.9977668177628264,0.9950804414306608,0.9950804414306608,0.9950804414306608,0.9957039937650884],"drifted":[0.9967021342791365,0.999825825153336,0.9970498170139668,0.9970498170139668,0.9970498170139668,0.9966983541606969]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[-0.19073574496578852,-0.36471696010045024,-0.2902796244761867,-0.2902796244761867,-0.2902796244761867,-0.14649264955821434]}},"fpr":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[0.0005026437641091,4.440315937359575e-05,0.0007175550554773,0.0007175550554773,0.0007175550554773,0.0003694342859883],"ramp":[0.0005180161997793,7.063857269718253e-05,0.0006525658620596,0.0006525658620596,0.0006525658620596,0.000407012728398],"drifted":[0.0006052893712139,6.434178355424013e-05,0.0004885209492081,0.0004885209492081,0.0004885209492081,0.0003860507013254]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[20.42114404557111,44.90361600823576,-31.918680597526013,-31.918680597526013,-31.918680597526013,4.4978000059329215]}},"roc_auc":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[0.999643480158269,0.9993021830185284,0.999513501052493,0.999513501052493,0.999513501052493,0.9994561478863102],"ramp":[0.9998904891602186,0.9999223903677448,0.9997960300301246,0.9997960300301246,0.9997960300301246,0.9997681948964438],"drifted":[0.9999887640979328,0.9999860200236772,0.999979408560725,0.999979408560725,0.999979408560725,0.9999624601912238]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[-0.03454070841427921,-0.06843145314495595,-0.04661342820695679,-0.04661342820695679,-0.04661342820695679,-0.05065878137668898]}},"average_precision":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[0.9985078129370472,0.9976970231093182,0.99821787597986,0.99821787597986,0.99821787597986,0.9980217703206598],"ramp":[0.9995055033042692,0.9996683122710716,0.9991732263967544,0.9991732263967544,0.9991732263967544,0.9990504643931092],"drifted":[0.9999431740801706,0.9998649398453818,0.9998939098867412,0.9998939098867412,0.9998939098867412,0.9997706042409727]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[-0.14375061712351134,-0.21729209227339819,-0.16790261396951964,-0.16790261396951964,-0.16790261396951964,-0.17523003729178227]}},"precision_at_100":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[1.0,1.0,1.0,1.0,1.0,1.0],"ramp":[1.0,1.0,1.0,1.0,1.0,1.0],"drifted":[1.0,1.0,1.0,1.0,1.0,1.0]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[0.0,0.0,0.0,0.0,0.0,0.0]}}},"revised":{"precision":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[0.99673364804192,0.9997105375895886,0.9953440665660186,0.9953440665660186,0.9953440665660186,0.9975972368223456],"ramp":[0.9968250041233712,0.9995768944049322,0.9960513728603122,0.9960513728603122,0.9960513728603122,0.997535089327548],"drifted":[0.9917820628963376,0.999466898335538,0.993480934809348,0.9943056813769898,0.9943056813769898,0.9950464396284828]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[0.49678117672757743,0.02437097988763997,0.1871846951475303,0.10432424564615558,0.10432424564615558,0.25569409173463903]}},"recall":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[0.9928831760120492,0.9926992193338467,0.992986651643538,0.992986651643538,0.992986651643538,0.9928946733044368],"ramp":[0.917248444376992,0.9411898618910304,0.9283844285931098,0.9283844285931098,0.9283844285931098,0.9289725299741994],"drifted":[0.3814299579424134,0.6298683522882811,0.5025135007341412,0.6692009058557101,0.6692009058557101,0.4999004554164696]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[61.58360145909205,36.54992972484094,49.39373052977017,32.60726065671831,32.60726065671831,49.65221701182473]}},"f1":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[0.9948046861500536,0.9961925419974156,0.994163961599558,0.994163961599558,0.994163961599558,0.995240400129074],"ramp":[0.9553825482137211,0.9695051052811569,0.9610282493642176,0.9610282493642176,0.9610282493642176,0.9620337717704148],"drifted":[0.5509642863562018,0.77274774259043,0.6674324056323131,0.7999851251348035,0.7999851251348035,0.6654740311907306]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[44.615833235721624,22.429880769732293,32.86495674632491,19.531872403856894,19.531872403856894,33.13434310901925]}},"fpr":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[0.0005026437641091,4.440315937359575e-05,0.0007175550554773,0.0007175550554773,0.0007175550554773,0.0003694342859883],"ramp":[0.0005180161997793,7.063857269718253e-05,0.0006525658620596,0.0006525658620596,0.0006525658620596,0.000407012728398],"drifted":[0.0006052893712139,6.434178355424013e-05,0.0006315026904397,0.0007339729383224,0.0007339729383224,0.0004766058041054]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[20.42114404557111,44.90361600823576,-11.992440772417112,2.28803110225169,2.28803110225169,29.009629636945526]}},"roc_auc":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[0.999643480158269,0.9993021830185284,0.999513501052493,0.999513501052493,0.999513501052493,0.9994561478863102],"ramp":[0.9970649287035962,0.9980409638282092,0.997296327218912,0.997296327218912,0.997296327218912,0.9976557563604612],"drifted":[0.9784345513722026,0.9918215212304102,0.9811910565728944,0.9866294309833478,0.9866294309833478,0.9847174294164106]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[2.1216492886752465,0.7485885566187565,1.83313626682431,1.2890341206575275,1.2890341206575275,1.4746738514810913]}},"average_precision":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[0.9985078129370472,0.9976970231093182,0.99821787597986,0.99821787597986,0.99821787597986,0.9980217703206598],"ramp":[0.9924494653333328,0.995522011108556,0.9930699292855844,0.9930699292855844,0.9930699292855844,0.9941791128360234],"drifted":[0.9253949593564432,0.9768076941855977,0.9389267816232608,0.9630053055257752,0.9630053055257752,0.950376887178904]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[7.322211467284079,2.093754761201856,5.939694708271828,3.5275435655286955,3.5275435655286955,4.773932248636988]}},"precision_at_100":{"performance":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"pre":[1.0,1.0,1.0,1.0,1.0,1.0],"ramp":[1.0,1.0,1.0,1.0,1.0,1.0],"drifted":[0.99,0.95,1.0,1.0,1.0,1.0]},"loss":{"models":["static_logistic","static_random_forest","adaptive_none","adaptive_adwin","adaptive_ddm","online_ensemble"],"labels":["Static Logistic","Static Random Forest","Adaptive None","Adaptive ADWIN","Adaptive DDM","Online Ensemble"],"values":[1.0000000000000009,5.000000000000004,0.0,0.0,0.0,0.0]}}}};
+    const { palette, phaseColors, font } = data;
+    const $ = (selector) => root.querySelector(selector);
+
+    const mainPage = $("#main-page");
+    const comparisonPage = $("#comparison-page");
+    const metricButtons = Array.from(root.querySelectorAll(".metric-button"));
+    const metricExplanation = $("#initial-metric-explanation");
+    const evaluationArea = $("#evaluation-area");
+    const evaluationNode = $("#evaluation-node");
+
+    const chartConfig = { responsive: true, displaylogo: false, displayModeBar: false };
+    const tickFont = (size) => ({ family: font, size });
+    const hoverLabel = {
+        font: { family: font, size: 9, color: "#ffffff" },
+        align: "left",
+        bordercolor: palette.surface,
+    };
+    const decimals = (metric) => (metric === "fpr" ? 4 : 3);
+
+    const performanceLayout = (metric) => ({
+        barmode: "group",
+        autosize: true,
+        margin: { l: 46, r: 12, t: 58, b: 78 },
+        xaxis: { tickangle: -18, automargin: true, tickfont: tickFont(10), fixedrange: true },
+        yaxis: {
+            title: { text: data.metricLabels[metric], font: tickFont(9), standoff: 4 },
+            range: metric === "fpr" ? undefined : [0, 1.12],
+            tickformat: metric === "fpr" ? ".4f" : ".1f",
+            gridcolor: palette.line_soft,
+            automargin: true,
+            tickfont: tickFont(8),
+            fixedrange: true,
+        },
+        legend: { orientation: "h", x: 0, xanchor: "left", y: 1.08, yanchor: "bottom", font: tickFont(9) },
+        font: { family: font, size: 10, color: palette.ink },
+        hoverlabel: hoverLabel,
+        bargap: 0.2,
+        bargroupgap: 0.04,
+        paper_bgcolor: palette.surface,
+        plot_bgcolor: palette.plot_bg,
+    });
+
+    const lossLayout = (metric, values) => ({
+        autosize: true,
+        margin: { l: 48, r: 12, t: 22, b: 84 },
+        xaxis: { tickangle: -28, automargin: true, tickfont: tickFont(9), fixedrange: true },
+        yaxis: {
+            title: {
+                text: metric === "fpr" ? "Relative FPR Increase (%)" : "Relative Loss (%)",
+                font: tickFont(9),
+                standoff: 4,
+            },
+            range: [Math.min(-5, ...values) - 5, Math.max(5, ...values) + 7],
+            gridcolor: palette.line_soft,
+            automargin: true,
+            tickfont: tickFont(8),
+            fixedrange: true,
+        },
+        font: { family: font, size: 9, color: palette.ink },
+        hoverlabel: hoverLabel,
+        bargap: 0.28,
+        paper_bgcolor: palette.surface,
+        plot_bgcolor: palette.plot_bg,
+        showlegend: false,
+        shapes: [{
+            type: "line", xref: "paper", x0: 0, x1: 1, y0: 0, y1: 0,
+            line: { color: palette.muted, dash: "dash", width: 1 },
+        }],
+    });
+
+    const performanceTraces = (scenario, metric) => {
+        const values = data[scenario][metric].performance;
+        const digits = decimals(metric);
+        const colors = phaseColors;
+
+        return [
+            ["Pre-drift", "pre"],
+            ["Ramp drift", "ramp"],
+            ["Fully drifted", "drifted"],
+        ].map(([name, key], index) => ({
+            type: "bar",
+            name,
+            x: values.labels,
+            y: values[key],
+            marker: { color: colors[index] },
+            text: values[key].map((value) => value.toFixed(digits)),
+            textposition: "outside",
+            cliponaxis: false,
+            textfont: tickFont(9),
+            hovertemplate: "%{x}<br>" + name + ": %{y:.4f}<extra></extra>",
+        }));
+    };
+
+    // Positive = worse (red); negative = improvement (green).
+    const lossTrace = (scenario, metric) => {
+        const values = data[scenario][metric].loss;
+
+        return [{
+            type: "bar",
+            x: values.labels,
+            y: values.values,
+            marker: { color: values.values.map((v) => (v > 0 ? palette.bad : palette.good)) },
+            text: values.values.map((value) => value.toFixed(1) + "%"),
+            textposition: "outside",
+            cliponaxis: false,
+            textfont: tickFont(9),
+            hovertemplate: "%{x}<br>%{y:.2f}%<extra></extra>",
+        }];
+    };
+
+    const renderMetric = (metric) => {
+        metricButtons.forEach((button) => {
+            button.classList.toggle("active", button.dataset.metric === metric);
+        });
+
+        for (const scenario of ["initial", "revised"]) {
+            Plotly.react(
+                $("#" + scenario + "-performance"),
+                performanceTraces(scenario, metric),
+                performanceLayout(metric),
+                chartConfig
+            );
+
+            Plotly.react(
+                $("#" + scenario + "-loss"),
+                lossTrace(scenario, metric),
+                lossLayout(metric, data[scenario][metric].loss.values),
+                chartConfig
+            );
+        }
+
+        metricExplanation.innerHTML =
+            "<strong>" + data.metricLabels[metric] + ":</strong> " + data.metricExplanations[metric];
+    };
+
+    metricButtons.forEach((button) => {
+        button.addEventListener("click", () => renderMetric(button.dataset.metric));
+    });
+
+    const focusEvaluation = () => {
+        evaluationArea.animate(
+            [
+                { outline: "3px solid " + palette.initial },
+                { outline: "3px solid transparent" },
+            ],
+            { duration: 900, easing: "ease-out" }
+        );
+    };
+
+    evaluationNode.addEventListener("click", focusEvaluation);
+
+    evaluationNode.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            focusEvaluation();
+        }
+    });
+
+    const showPage = (showComparison) => {
+        comparisonPage.classList.toggle("active", showComparison);
+        mainPage.style.display = showComparison ? "none" : "grid";
+        window.scrollTo(0, 0);
+        window.dispatchEvent(new Event("resize"));
+    };
+
+    $("#results-button").addEventListener("click", () => showPage(true));
+    $("#comparison-back").addEventListener("click", () => showPage(false));
+
+    let currentMetric = "recall";
+    metricButtons.forEach((button) => {
+        button.addEventListener("click", () => { currentMetric = button.dataset.metric; });
+    });
+
+    renderMetric(currentMetric);
+
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => renderMetric(currentMetric));
+    }
+})();
+</script>
+
+</body>
+</html>
