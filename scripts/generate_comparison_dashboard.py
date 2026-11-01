@@ -25,12 +25,8 @@ def main() -> None:
         detector_quality_path=Path(
             "results/final_camouflage/metrics/evaluation/detector_quality.csv"
         ),
-        drift_events_path=Path(
-            "results/final_camouflage/metrics/experiment/drift_events.json"
-        ),
-        run_manifest_path=Path(
-            "results/final_camouflage/metrics/experiment/run_manifest.json"
-        ),
+        drift_events_path=Path("results/final_camouflage/metrics/experiment/drift_events.json"),
+        run_manifest_path=Path("results/final_camouflage/metrics/experiment/run_manifest.json"),
         output_path=Path("results/experiment_comparison/index.html"),
     )
 
