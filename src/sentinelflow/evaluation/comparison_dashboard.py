@@ -124,21 +124,9 @@ PALETTE = {
 PHASE_COLORS = ["#4e79a7", "#f28e2b", "#8e6bbf"]  # pre, ramp, fully drifted
 
 # Details that are not part of the detector-quality CSV.
-DETECTOR_DETAILS = {
-    "ADWIN": {
-        "label": "Adaptive ADWIN",
-        "source_batch": 17,
-        "observed_batch": 24,
-        "delay": "7 batches",
-        "window": "200,000 recent labeled rows",
-    },
-    "DDM": {
-        "label": "Adaptive DDM",
-        "source_batch": 17,
-        "observed_batch": 24,
-        "delay": "7 batches",
-        "window": "200,000 recent labeled rows",
-    },
+DETECTOR_LABELS = {
+    "ADWIN": "Adaptive ADWIN",
+    "DDM": "Adaptive DDM",
 }
 
 # ---------------------------------------------------------------------------
@@ -442,24 +430,43 @@ def _comparison_table_html(
     )
 
 
-def _detector_card_html(detector: str, alarms: object, false_alarms: object) -> str:
-    details = DETECTOR_DETAILS[detector]
+def _detector_card_html(
+    detector: str,
+    alarms: object,
+    false_alarms: object,
+    source_batch: object,
+    observed_batch: object,
+    detection_delay: object,
+    retrain_rows: object,
+) -> str:
+    """Render one detector card using experiment-derived values."""
+    label = DETECTOR_LABELS[detector]
+
+    if isinstance(retrain_rows, int):
+        window = f"{retrain_rows:,} recent labeled rows"
+    else:
+        window = str(retrain_rows)
+
+    if isinstance(detection_delay, int):
+        delay = f"{detection_delay} batches"
+    else:
+        delay = str(detection_delay)
 
     fields = (
         ("Concept-drift detector", detector),
         ("Confirmed alarms", alarms),
         ("False alarms", false_alarms),
-        ("Source batch", details["source_batch"]),
-        ("Observed batch", details["observed_batch"]),
-        ("Detection delay", details["delay"]),
-        ("Retraining window", details["window"]),
+        ("Source batch", source_batch),
+        ("Observed batch", observed_batch),
+        ("Detection delay", delay),
+        ("Retraining window", window),
     )
 
     body = "\n".join(
         f"<p><strong>{escape(name)}:</strong> {escape(str(value))}</p>" for name, value in fields
     )
 
-    return f'<div class="detector-card"><h3>{escape(details["label"])}</h3>\n{body}\n</div>'
+    return f'<div class="detector-card"><h3>{escape(label)}</h3>\n{body}\n</div>'
 
 
 # ---------------------------------------------------------------------------
@@ -473,6 +480,8 @@ def generate_final_experiment_dashboard(
     camouflage_batch_metrics: Path,
     camouflage_phase_summary: Path,
     detector_quality_path: Path,
+    drift_events_path: Path,
+    run_manifest_path: Path,
     output_path: Path,
 ) -> Path:
     """Generate the compact SentinelFlow evaluation dashboard."""
@@ -483,6 +492,22 @@ def generate_final_experiment_dashboard(
     initial = _normalize_metrics(pd.read_csv(separability_phase_summary))
     revised = _normalize_metrics(pd.read_csv(camouflage_phase_summary))
     detector_quality = pd.read_csv(detector_quality_path)
+    with drift_events_path.open(encoding="utf-8") as file:
+        drift_events = json.load(file)
+
+    with run_manifest_path.open(encoding="utf-8") as file:
+        run_manifest = json.load(file)
+        configuration = run_manifest["configuration"]
+        adaptive_config = configuration["models"]["adaptive"]
+        stream_config = configuration["stream"]
+
+        configured_retrain_rows = int(adaptive_config["recent_window_rows"])
+        configured_label_delay = int(stream_config["label_delay_batches"])
+
+        run_summary = run_manifest["summary"]
+        representative_seed = int(run_summary["seed"])
+        evaluation_rows = int(run_summary["evaluation_rows"])
+        evaluation_batches = int(run_summary["batch_count"])
 
     required = {"model", "phase", *METRICS}
     _require_columns("Initial evaluation", initial, required)
@@ -544,14 +569,55 @@ def generate_final_experiment_dashboard(
     ]
     by_detector = {item["detector"]: item for item in detector_summary}
 
-    detector_cards = "\n".join(
-        _detector_card_html(
-            name,
-            by_detector.get(name, {}).get("alarms", "n/a"),
-            by_detector.get(name, {}).get("falseAlarms", "n/a"),
+    recovery_events: dict[str, dict[str, object]] = {}
+
+    for event in drift_events:
+        model = str(event.get("model", ""))
+
+        if model == "adaptive_adwin":
+            detector = "ADWIN"
+        elif model == "adaptive_ddm":
+            detector = "DDM"
+        else:
+            continue
+
+        retrain_rows = int(event.get("retrain_rows") or 0)
+
+        if retrain_rows <= 0:
+            continue
+
+        recovery_events[detector] = event
+
+    detector_cards_list = []
+
+    for detector in DETECTOR_LABELS:
+        quality = by_detector.get(detector, {})
+        event = recovery_events.get(detector)
+
+        if event is None:
+            source_batch: object = "n/a"
+            observed_batch: object = "n/a"
+            detection_delay: object = configured_label_delay
+            retrain_rows: object = configured_retrain_rows
+        else:
+            source_batch = int(event["source_batch"])
+            observed_batch = int(event["observed_batch"])
+            detection_delay = observed_batch - source_batch
+            retrain_rows = int(event["retrain_rows"])
+
+        detector_cards_list.append(
+            _detector_card_html(
+                detector=detector,
+                alarms=quality.get("alarms", "n/a"),
+                false_alarms=quality.get("falseAlarms", "n/a"),
+                source_batch=source_batch,
+                observed_batch=observed_batch,
+                detection_delay=detection_delay,
+                retrain_rows=retrain_rows,
+            )
         )
-        for name in DETECTOR_DETAILS
-    )
+
+    detector_cards = "\n".join(detector_cards_list)
 
     initial_table = _comparison_table_html(
         [
@@ -603,6 +669,9 @@ def generate_final_experiment_dashboard(
         "%%REVISED_RF_F1%%": f"{f1_drifted('static_random_forest'):.3f}",
         "%%REVISED_ADWIN_F1%%": f"{f1_drifted('adaptive_adwin'):.3f}",
         "%%REVISED_DDM_F1%%": f"{f1_drifted('adaptive_ddm'):.3f}",
+        "%%REPRESENTATIVE_SEED%%": str(representative_seed),
+        "%%EVALUATION_ROWS%%": f"{evaluation_rows:,}",
+        "%%EVALUATION_BATCHES%%": str(evaluation_batches),
     }
 
     html = _DASHBOARD_TEMPLATE
@@ -1124,7 +1193,16 @@ button { font: inherit; }
 <div class="subtitle">Static vs. adaptive model performance under controlled concept-drift scenarios</div>
 <div class="hero-copy">
 <p><strong>Purpose:</strong> Compare how static and adaptive fraud models behave across controlled concept-drift phases and determine whether adaptation helps as transaction behavior changes.</p>
+
 <p class="definition"><strong>Concept drift:</strong> the relationship between transaction characteristics and fraud changes over time, so models trained on earlier behavior may become less effective.</p>
+
+<p class="definition">
+<strong>Representative dashboard run:</strong>
+Seed %%REPRESENTATIVE_SEED%% · %%EVALUATION_ROWS%% evaluation rows ·
+%%EVALUATION_BATCHES%% batches.
+This dashboard visualizes one representative run; the repository's headline
+results are based on the complete three-seed study.
+</p>
 </div>
 </section>
 

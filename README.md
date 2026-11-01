@@ -455,16 +455,14 @@ results/metrics/experiment/detector_study/model_phase_summary.csv
 
 ---
 
-## Open the Interactive Dashboard
+---
 
-## Open the Interactive Dashboard
+## Concept Drift Evaluation Dashboard
 
 The final comparison dashboard evaluates concept drift in Card-Not-Present (CNP) fraud detection by comparing two controlled drift scenarios:
 
 - **Initial Evaluation — Original Controlled Drift:** the original drift increased fraud-versus-legitimate separation and produced little meaningful performance degradation.
 - **Revised Evaluation — Camouflage Drift:** fraudulent behavior is moved closer to legitimate behavior, creating a more challenging drift condition for evaluating adaptive recovery.
-
-## Concept Drift Evaluation Dashboard
 
 The dashboard compares frozen static models, adaptive models using ADWIN and DDM drift detection, and an online ensemble across pre-drift, ramp-drift, and fully drifted phases.
 
@@ -475,6 +473,22 @@ The dashboard compares frozen static models, adaptive models using ADWIN and DDM
 ### Evaluation Comparison
 
 ![Initial and Revised Evaluation Comparison](docs/images/dashboard2.jpg)
+
+### Generate the Comparison Dashboard
+
+The committed comparison dashboard represents the seed 543 run with 1.5 million evaluation rows across 30 batches. The repository's headline experimental results are based on the complete three-seed study.
+
+After generating the required evaluation artifacts, rebuild the comparison dashboard with:
+
+```powershell
+python scripts\generate_comparison_dashboard.py
+```
+
+This generates:
+
+```text
+results/experiment_comparison/index.html
+```
 
 ### Interactive Dashboard
 
@@ -532,6 +546,47 @@ The dashboard uses results from the original controlled-drift and revised camouf
 ## Generated Artifacts
 
 A standard experiment produces:
+
+## Experiment Replay Dashboard
+
+The experiment pipeline also generates per-run interactive replay dashboards for inspecting model performance and detector behavior over the evaluation stream.
+
+For the representative camouflage run using seed 543:
+
+```text
+results/metrics/experiment/detector_study/camouflage/seed_543/evaluation/dashboard/index.html
+```
+
+On macOS:
+
+```bash
+open results/metrics/experiment/detector_study/camouflage/seed_543/evaluation/dashboard/index.html
+```
+
+On Linux:
+
+```bash
+xdg-open results/metrics/experiment/detector_study/camouflage/seed_543/evaluation/dashboard/index.html
+```
+
+On Windows PowerShell:
+
+```powershell
+Start-Process results\metrics\experiment\detector_study\camouflage\seed_543\evaluation\dashboard\index.html
+```
+
+The replay dashboard provides:
+
+- Model performance by batch
+- Pre-drift, ramp-drift, and fully drifted phases
+- Drift-start marker
+- Detector-alarm markers
+- Batch slider
+- Replay controls
+- Replay-speed controls
+- Separate dashboards for F1, precision, recall, FPR, ROC-AUC, and Average Precision
+
+---
 
 ### Reproducibility artifacts
 
