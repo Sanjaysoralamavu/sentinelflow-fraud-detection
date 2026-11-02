@@ -11,6 +11,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.io as pio
 
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -25,7 +26,12 @@ DISPLAY_NAMES = {
 }
 
 MODEL_ORDER = list(DISPLAY_NAMES)
-PHASES = ("pre_drift", "ramp_drift", "drifted")
+
+PHASES = (
+    "pre_drift",
+    "ramp_drift",
+    "drifted",
+)
 
 METRICS = (
     "precision",
@@ -74,9 +80,8 @@ METRIC_EXPLANATIONS = {
     "precision_at_100": ("The proportion of true fraud among the 100 highest-risk predictions."),
 }
 
-# Lexend (Google Fonts) with system fallbacks. Used for the page, the SVG
-# and every Plotly chart.
 FONT_STACK = '"Lexend", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif'
+
 GOOGLE_FONT_LINKS = (
     '<link rel="preconnect" href="https://fonts.googleapis.com">'
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
@@ -84,10 +89,7 @@ GOOGLE_FONT_LINKS = (
     'wght@400;500;600;700&display=swap" rel="stylesheet">'
 )
 
-# Single source of truth for colour. Keys become CSS custom properties
-# (underscores -> hyphens) and are also passed to the Plotly charts.
 PALETTE = {
-    # Neutrals
     "ink": "#1d1d1f",
     "muted": "#6e6e73",
     "bg": "#f5f5f7",
@@ -95,39 +97,35 @@ PALETTE = {
     "line": "#d2d2d7",
     "line_soft": "#e5e5ea",
     "plot_bg": "#f2f2f5",
-    # Header and context panels: blue (teal-blue)
     "accent": "#0e7c86",
-    # Recovery Result card: purple
     "recovery": "#6b3fa0",
     "recovery_tint": "#f5effb",
     "recovery_border": "#cdb6e6",
-    # Initial evaluation: yellow (initial_ink is the darker, text-safe shade)
     "initial": "#f2b705",
     "initial_ink": "#7a5800",
     "initial_tint": "#fff9db",
     "initial_border": "#f1d96a",
-    # Revised evaluation: green
     "revised": "#16803a",
     "revised_tint": "#eefaf1",
     "revised_border": "#a8dbb7",
-    # Semantic colours
     "good": "#2e7d32",
     "bad": "#c0261c",
-    # Model identity colours
     "static": "#6e6e73",
-    # Eval node highlight
     "focus_fill": "#fff3bf",
     "focus_hover": "#ffe680",
 }
 
-# One colour per drift phase, shared by both evaluation sections.
-PHASE_COLORS = ["#4e79a7", "#f28e2b", "#8e6bbf"]  # pre, ramp, fully drifted
+PHASE_COLORS = [
+    "#4e79a7",
+    "#f28e2b",
+    "#8e6bbf",
+]
 
-# Details that are not part of the detector-quality CSV.
 DETECTOR_LABELS = {
     "ADWIN": "Adaptive ADWIN",
     "DDM": "Adaptive DDM",
 }
+
 
 # ---------------------------------------------------------------------------
 # Data helpers
@@ -156,12 +154,17 @@ def _ordered_models(frame: pd.DataFrame) -> pd.DataFrame:
     ordered["model_order"] = ordered["model"].map(
         {model: index for index, model in enumerate(MODEL_ORDER)}
     )
+
     ordered["display_model"] = ordered["model"].map(_display_name)
 
     return ordered.sort_values("model_order")
 
 
-def _require_columns(name: str, frame: pd.DataFrame, required: set[str]) -> None:
+def _require_columns(
+    name: str,
+    frame: pd.DataFrame,
+    required: set[str],
+) -> None:
     """Raise a readable error when a summary is missing columns."""
     missing = required.difference(frame.columns)
 
@@ -172,13 +175,34 @@ def _require_columns(name: str, frame: pd.DataFrame, required: set[str]) -> None
 
 def _with_font(html: str) -> str:
     """Inject the Lexend font links into a Plotly-generated page."""
-    return html.replace("<head>", "<head>" + GOOGLE_FONT_LINKS, 1)
+    return html.replace(
+        "<head>",
+        "<head>" + GOOGLE_FONT_LINKS,
+        1,
+    )
 
 
-def _write_text(path: Path, content: str) -> Path:
-    """Write text to ``path``, creating parent directories first."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding="utf-8")
+def _write_text(
+    path: Path,
+    content: str,
+) -> Path:
+    """Write text to path, creating parent directories first."""
+    path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    # Normalize generated output so git diff --check does not report
+    # trailing whitespace.
+    clean_content = "\n".join(line.rstrip() for line in content.splitlines())
+
+    clean_content += "\n"
+
+    path.write_text(
+        clean_content,
+        encoding="utf-8",
+    )
+
     return path
 
 
@@ -215,10 +239,14 @@ def _relative_change_data(
 ) -> dict[str, object]:
     """Return relative change from pre-drift to fully drifted.
 
-    Positive values are always "worse": a drop for most metrics, a rise
-    for FPR.
+    Positive values are always worse: a drop for most metrics,
+    or a rise for FPR.
     """
-    phase_data = _phase_metric_data(frame, metric)
+    phase_data = _phase_metric_data(
+        frame,
+        metric,
+    )
+
     values = []
 
     for pre, drifted in zip(
@@ -230,7 +258,8 @@ def _relative_change_data(
             values.append(0.0)
             continue
 
-        change = (drifted - pre) if metric == "fpr" else (pre - drifted)
+        change = drifted - pre if metric == "fpr" else pre - drifted
+
         values.append(change / pre * 100.0)
 
     return {
@@ -256,7 +285,7 @@ def _phase_value(
 
 
 # ---------------------------------------------------------------------------
-# Legacy dashboards (unchanged behaviour)
+# Legacy dashboards
 # ---------------------------------------------------------------------------
 
 
@@ -272,8 +301,16 @@ def _build_legacy_comparison_chart(
     figure = go.Figure()
 
     for name, frame, color in (
-        (first_name, first, PALETTE["initial"]),
-        (second_name, second, PALETTE["revised"]),
+        (
+            first_name,
+            first,
+            PALETTE["initial"],
+        ),
+        (
+            second_name,
+            second,
+            PALETTE["revised"],
+        ),
     ):
         ordered = _ordered_models(frame)
 
@@ -289,9 +326,20 @@ def _build_legacy_comparison_chart(
     figure.update_layout(
         barmode="group",
         title=f"{first_name} vs. {second_name}",
-        yaxis_title=METRIC_LABELS.get(metric, metric),
-        font={"family": FONT_STACK, "color": PALETTE["ink"]},
-        hoverlabel={"font": {"family": FONT_STACK, "size": 10}},
+        yaxis_title=METRIC_LABELS.get(
+            metric,
+            metric,
+        ),
+        font={
+            "family": FONT_STACK,
+            "color": PALETTE["ink"],
+        },
+        hoverlabel={
+            "font": {
+                "family": FONT_STACK,
+                "size": 10,
+            }
+        },
         paper_bgcolor=PALETTE["surface"],
         plot_bgcolor=PALETTE["plot_bg"],
     )
@@ -310,11 +358,25 @@ def generate_scenario_comparison_dashboard(
 ) -> Path:
     """Generate the legacy scenario-comparison dashboard."""
     phase_one = _normalize_metrics(pd.read_csv(phase_one_summary))
+
     phase_two = _normalize_metrics(pd.read_csv(phase_two_summary))
 
-    required = {"model", metric}
-    _require_columns(phase_one_name, phase_one, required)
-    _require_columns(phase_two_name, phase_two, required)
+    required = {
+        "model",
+        metric,
+    }
+
+    _require_columns(
+        phase_one_name,
+        phase_one,
+        required,
+    )
+
+    _require_columns(
+        phase_two_name,
+        phase_two,
+        required,
+    )
 
     figure = _build_legacy_comparison_chart(
         phase_one,
@@ -326,7 +388,13 @@ def generate_scenario_comparison_dashboard(
 
     return _write_text(
         output_path,
-        _with_font(pio.to_html(figure, full_html=True, include_plotlyjs=True)),
+        _with_font(
+            pio.to_html(
+                figure,
+                full_html=True,
+                include_plotlyjs=True,
+            )
+        ),
     )
 
 
@@ -339,39 +407,74 @@ def generate_phase_comparison_dashboard(
 ) -> Path:
     """Generate the legacy phase-comparison dashboard."""
     original = _normalize_metrics(pd.read_csv(original_phase_summary))
+
     camouflage = _normalize_metrics(pd.read_csv(camouflage_phase_summary))
 
     figure = go.Figure()
 
     for scenario, frame, pattern in (
-        ("Original Drift", original, ""),
-        ("Camouflage Drift", camouflage, "/"),
+        (
+            "Original Drift",
+            original,
+            "",
+        ),
+        (
+            "Camouflage Drift",
+            camouflage,
+            "/",
+        ),
     ):
-        for phase, color in zip(PHASES, PHASE_COLORS, strict=True):
+        for phase, color in zip(
+            PHASES,
+            PHASE_COLORS,
+            strict=True,
+        ):
             ordered = _ordered_models(frame[frame["phase"] == phase])
 
             figure.add_trace(
                 go.Bar(
-                    name=f"{scenario} - {phase.replace('_', ' ').title()}",
+                    name=(f"{scenario} - {phase.replace('_', ' ').title()}"),
                     x=ordered["display_model"],
                     y=ordered[metric],
-                    marker={"color": color, "pattern": {"shape": pattern}},
+                    marker={
+                        "color": color,
+                        "pattern": {
+                            "shape": pattern,
+                        },
+                    },
                 )
             )
 
     figure.update_layout(
         barmode="group",
         title="Performance Across Drift Phases",
-        yaxis_title=METRIC_LABELS.get(metric, metric),
-        font={"family": FONT_STACK, "color": PALETTE["ink"]},
-        hoverlabel={"font": {"family": FONT_STACK, "size": 10}},
+        yaxis_title=METRIC_LABELS.get(
+            metric,
+            metric,
+        ),
+        font={
+            "family": FONT_STACK,
+            "color": PALETTE["ink"],
+        },
+        hoverlabel={
+            "font": {
+                "family": FONT_STACK,
+                "size": 10,
+            }
+        },
         paper_bgcolor=PALETTE["surface"],
         plot_bgcolor=PALETTE["plot_bg"],
     )
 
     return _write_text(
         output_path,
-        _with_font(pio.to_html(figure, full_html=True, include_plotlyjs=True)),
+        _with_font(
+            pio.to_html(
+                figure,
+                full_html=True,
+                include_plotlyjs=True,
+            )
+        ),
     )
 
 
@@ -383,11 +486,14 @@ def generate_phase_comparison_dashboard(
 def _root_css_vars() -> str:
     """Render the palette and font as CSS custom properties."""
     lines = [f"--{key.replace('_', '-')}: {value};" for key, value in PALETTE.items()]
+
     lines.append(f"--font: {FONT_STACK};")
+
     return "\n    ".join(lines)
 
 
 def _metric_buttons_html() -> str:
+    """Render the metric-selection buttons."""
     return "\n".join(
         "<button "
         f'class="metric-button{" active" if metric == "recall" else ""}" '
@@ -399,27 +505,46 @@ def _metric_buttons_html() -> str:
     )
 
 
-def _trio(values: dict[str, float]) -> str:
+def _trio(
+    values: dict[str, float],
+) -> str:
     """Format a pre -> ramp -> drifted triple."""
     return f"{values['pre']:.3f} → {values['ramp']:.3f} → {values['drifted']:.3f}"
 
 
 def _comparison_table_html(
-    rows: list[tuple[str, str, dict[str, float], str]],
+    rows: list[
+        tuple[
+            str,
+            str,
+            dict[str, float],
+            str,
+        ]
+    ],
 ) -> str:
-    """Render the pre/ramp/drifted table.
-
-    ``rows`` items are ``(label, css_class, values, final_cell_class)``.
-    """
+    """Render the pre/ramp/drifted table."""
     cells = [
-        f'<div class="comparison-cell header">{title}</div>'
-        for title in ("Model", "Pre-drift", "Ramp drift", "Fully drifted")
+        (f'<div class="comparison-cell header">{title}</div>')
+        for title in (
+            "Model",
+            "Pre-drift",
+            "Ramp drift",
+            "Fully drifted",
+        )
     ]
 
-    for label, css_class, values, final_class in rows:
+    for (
+        label,
+        css_class,
+        values,
+        final_class,
+    ) in rows:
         cells.append(f'<div class="comparison-cell model {css_class}">{escape(label)}</div>')
+
         cells.append(f'<div class="comparison-cell value">{values["pre"]:.3f}</div>')
+
         cells.append(f'<div class="comparison-cell value">{values["ramp"]:.3f}</div>')
+
         cells.append(
             f'<div class="comparison-cell value {final_class}">{values["drifted"]:.3f}</div>'
         )
@@ -430,40 +555,74 @@ def _comparison_table_html(
     )
 
 
+def _format_delay(
+    value: object,
+) -> str:
+    """Format a detector delay value for display."""
+    if isinstance(value, int):
+        return f"{value} batches"
+
+    return str(value)
+
+
 def _detector_card_html(
     detector: str,
     alarms: object,
     false_alarms: object,
     source_batch: object,
     observed_batch: object,
-    detection_delay: object,
+    source_detection_delay: object,
+    observed_detection_delay: object,
     retrain_rows: object,
 ) -> str:
     """Render one detector card using experiment-derived values."""
     label = DETECTOR_LABELS[detector]
 
-    if isinstance(retrain_rows, int):
+    if isinstance(
+        retrain_rows,
+        int,
+    ):
         window = f"{retrain_rows:,} recent labeled rows"
     else:
         window = str(retrain_rows)
 
-    if isinstance(detection_delay, int):
-        delay = f"{detection_delay} batches"
-    else:
-        delay = str(detection_delay)
-
     fields = (
-        ("Concept-drift detector", detector),
-        ("Confirmed alarms", alarms),
-        ("False alarms", false_alarms),
-        ("Source batch", source_batch),
-        ("Observed batch", observed_batch),
-        ("Detection delay", delay),
-        ("Retraining window", window),
+        (
+            "Concept-drift detector",
+            detector,
+        ),
+        (
+            "Confirmed alarms",
+            alarms,
+        ),
+        (
+            "False alarms",
+            false_alarms,
+        ),
+        (
+            "Source batch",
+            source_batch,
+        ),
+        (
+            "Observed batch",
+            observed_batch,
+        ),
+        (
+            "Source detection delay",
+            _format_delay(source_detection_delay),
+        ),
+        (
+            "Observed detection delay",
+            _format_delay(observed_detection_delay),
+        ),
+        (
+            "Retraining window",
+            window,
+        ),
     )
 
     body = "\n".join(
-        f"<p><strong>{escape(name)}:</strong> {escape(str(value))}</p>" for name, value in fields
+        (f"<p><strong>{escape(name)}:</strong> {escape(str(value))}</p>") for name, value in fields
     )
 
     return f'<div class="detector-card"><h3>{escape(label)}</h3>\n{body}\n</div>'
@@ -485,37 +644,70 @@ def generate_final_experiment_dashboard(
     output_path: Path,
 ) -> Path:
     """Generate the compact SentinelFlow evaluation dashboard."""
-    # Batch metrics are only checked for existence/readability here.
     pd.read_csv(separability_batch_metrics)
+
     pd.read_csv(camouflage_batch_metrics)
 
     initial = _normalize_metrics(pd.read_csv(separability_phase_summary))
+
     revised = _normalize_metrics(pd.read_csv(camouflage_phase_summary))
+
     detector_quality = pd.read_csv(detector_quality_path)
+
+    detector_required = {
+        "detector",
+        "total_alarms",
+        "false_alarms",
+        "post_drift_alarms",
+        "missed_detection",
+        "source_detection_delay",
+        "observed_detection_delay",
+    }
+
+    _require_columns(
+        "Detector quality",
+        detector_quality,
+        detector_required,
+    )
+
     with drift_events_path.open(encoding="utf-8") as file:
         drift_events = json.load(file)
 
     with run_manifest_path.open(encoding="utf-8") as file:
         run_manifest = json.load(file)
-        configuration = run_manifest["configuration"]
-        adaptive_config = configuration["models"]["adaptive"]
-        stream_config = configuration["stream"]
 
-        configured_retrain_rows = int(adaptive_config["recent_window_rows"])
-        configured_label_delay = int(stream_config["label_delay_batches"])
+    run_summary = run_manifest["summary"]
 
-        run_summary = run_manifest["summary"]
-        representative_seed = int(run_summary["seed"])
-        evaluation_rows = int(run_summary["evaluation_rows"])
-        evaluation_batches = int(run_summary["batch_count"])
+    representative_seed = int(run_summary["seed"])
 
-    required = {"model", "phase", *METRICS}
-    _require_columns("Initial evaluation", initial, required)
-    _require_columns("Revised evaluation", revised, required)
+    evaluation_rows = int(run_summary["evaluation_rows"])
 
-    dashboard_data: dict[str, object] = {
+    evaluation_batches = int(run_summary["batch_count"])
+
+    required = {
+        "model",
+        "phase",
+        *METRICS,
+    }
+
+    _require_columns(
+        "Initial evaluation",
+        initial,
+        required,
+    )
+
+    _require_columns(
+        "Revised evaluation",
+        revised,
+        required,
+    )
+
+    dashboard_data: dict[
+        str,
+        object,
+    ] = {
         "metricLabels": METRIC_LABELS,
-        "metricExplanations": METRIC_EXPLANATIONS,
+        "metricExplanations": (METRIC_EXPLANATIONS),
         "palette": PALETTE,
         "phaseColors": PHASE_COLORS,
         "font": FONT_STACK,
@@ -523,11 +715,30 @@ def generate_final_experiment_dashboard(
         "revised": {},
     }
 
-    for key, frame in (("initial", initial), ("revised", revised)):
+    for key, frame in (
+        (
+            "initial",
+            initial,
+        ),
+        (
+            "revised",
+            revised,
+        ),
+    ):
         for metric in METRICS:
             dashboard_data[key][metric] = {
-                "performance": _phase_metric_data(frame, metric),
-                "loss": _relative_change_data(frame, metric),
+                "performance": (
+                    _phase_metric_data(
+                        frame,
+                        metric,
+                    )
+                ),
+                "loss": (
+                    _relative_change_data(
+                        frame,
+                        metric,
+                    )
+                ),
             }
 
     comparison_models = (
@@ -536,43 +747,113 @@ def generate_final_experiment_dashboard(
         "adaptive_ddm",
     )
 
-    values: dict[str, dict[str, dict[str, float]]] = {}
+    values: dict[
+        str,
+        dict[
+            str,
+            dict[
+                str,
+                float,
+            ],
+        ],
+    ] = {}
 
-    for key, frame in (("initial", initial), ("revised", revised)):
+    for key, frame in (
+        (
+            "initial",
+            initial,
+        ),
+        (
+            "revised",
+            revised,
+        ),
+    ):
         values[key] = {
             model: {
-                "pre": _phase_value(frame, model, "pre_drift"),
-                "ramp": _phase_value(frame, model, "ramp_drift"),
-                "drifted": _phase_value(frame, model, "drifted"),
+                "pre": _phase_value(
+                    frame,
+                    model,
+                    "pre_drift",
+                ),
+                "ramp": _phase_value(
+                    frame,
+                    model,
+                    "ramp_drift",
+                ),
+                "drifted": _phase_value(
+                    frame,
+                    model,
+                    "drifted",
+                ),
             }
             for model in comparison_models
         }
 
-    def f1_drifted(model: str) -> float:
-        return _phase_value(revised, model, "drifted", "f1")
+    def f1_drifted(
+        model: str,
+    ) -> float:
+        return _phase_value(
+            revised,
+            model,
+            "drifted",
+            "f1",
+        )
 
     initial_rf = values["initial"]["static_random_forest"]
+
     initial_adwin = values["initial"]["adaptive_adwin"]
+
     initial_ddm = values["initial"]["adaptive_ddm"]
+
     revised_rf = values["revised"]["static_random_forest"]
+
     revised_adwin = values["revised"]["adaptive_adwin"]
+
     revised_ddm = values["revised"]["adaptive_ddm"]
 
-    # Detector quality (alarms / false alarms) now feeds the detector cards.
-    detector_summary = [
-        {
-            "detector": str(row["detector"]).upper(),
-            "alarms": int(row["total_alarms"]),
-            "falseAlarms": int(row["false_alarms"]),
-        }
-        for _, row in detector_quality.iterrows()
-    ]
+    # Detector response-time measurements come directly from
+    # detector_quality.csv. They are intentionally not inferred from
+    # observed_batch - source_batch, because that difference reflects
+    # delayed-label observation rather than detector response to drift.
+    detector_summary = []
+
+    for _, row in detector_quality.iterrows():
+        confirmed_detection = int(row["post_drift_alarms"]) > 0 and not bool(
+            row["missed_detection"]
+        )
+
+        detector_summary.append(
+            {
+                "detector": str(row["detector"]).upper(),
+                "alarms": int(row["total_alarms"]),
+                "falseAlarms": int(row["false_alarms"]),
+                "confirmedDetection": (confirmed_detection),
+                "sourceDetectionDelay": (
+                    int(row["source_detection_delay"]) if confirmed_detection else None
+                ),
+                "observedDetectionDelay": (
+                    int(row["observed_detection_delay"]) if confirmed_detection else None
+                ),
+            }
+        )
+
     by_detector = {item["detector"]: item for item in detector_summary}
 
-    recovery_events: dict[str, dict[str, object]] = {}
+    recovery_events: dict[
+        str,
+        dict[
+            str,
+            object,
+        ],
+    ] = {}
 
     for event in drift_events:
-        model = str(event.get("model", ""))
+        model = str(
+            event.get(
+                "model",
+                "",
+            )
+        )
 
         if model == "adaptive_adwin":
             detector = "ADWIN"
@@ -591,29 +872,65 @@ def generate_final_experiment_dashboard(
     detector_cards_list = []
 
     for detector in DETECTOR_LABELS:
-        quality = by_detector.get(detector, {})
+        quality = by_detector.get(
+            detector,
+            {},
+        )
+
         event = recovery_events.get(detector)
 
-        if event is None:
-            source_batch: object = "n/a"
-            observed_batch: object = "n/a"
-            detection_delay: object = configured_label_delay
-            retrain_rows: object = configured_retrain_rows
+        confirmed_detection = bool(
+            quality.get(
+                "confirmedDetection",
+                False,
+            )
+        )
+
+        # When there is no confirmed detection, do not present event
+        # batches or detector-response delays as though a detection
+        # occurred.
+        if confirmed_detection and event is not None:
+            source_batch: object = int(event["source_batch"])
+
+            observed_batch: object = int(event["observed_batch"])
+
+            retrain_rows: object = int(event["retrain_rows"])
         else:
-            source_batch = int(event["source_batch"])
-            observed_batch = int(event["observed_batch"])
-            detection_delay = observed_batch - source_batch
-            retrain_rows = int(event["retrain_rows"])
+            source_batch = "N/A"
+            observed_batch = "N/A"
+            retrain_rows = "N/A"
+
+        if confirmed_detection:
+            source_detection_delay: object = quality.get(
+                "sourceDetectionDelay",
+                "N/A",
+            )
+
+            observed_detection_delay: object = quality.get(
+                "observedDetectionDelay",
+                "N/A",
+            )
+        else:
+            source_detection_delay = "N/A"
+
+            observed_detection_delay = "N/A"
 
         detector_cards_list.append(
             _detector_card_html(
                 detector=detector,
-                alarms=quality.get("alarms", "n/a"),
-                false_alarms=quality.get("falseAlarms", "n/a"),
-                source_batch=source_batch,
-                observed_batch=observed_batch,
-                detection_delay=detection_delay,
-                retrain_rows=retrain_rows,
+                alarms=quality.get(
+                    "alarms",
+                    "N/A",
+                ),
+                false_alarms=quality.get(
+                    "falseAlarms",
+                    "N/A",
+                ),
+                source_batch=(source_batch),
+                observed_batch=(observed_batch),
+                source_detection_delay=(source_detection_delay),
+                observed_detection_delay=(observed_detection_delay),
+                retrain_rows=(retrain_rows),
             )
         )
 
@@ -621,65 +938,101 @@ def generate_final_experiment_dashboard(
 
     initial_table = _comparison_table_html(
         [
-            ("Static Random Forest", "static-model", initial_rf, ""),
-            ("Adaptive ADWIN", "adwin-model", initial_adwin, ""),
-            ("Adaptive DDM", "ddm-model", initial_ddm, ""),
+            (
+                "Static Random Forest",
+                "static-model",
+                initial_rf,
+                "",
+            ),
+            (
+                "Adaptive ADWIN",
+                "adwin-model",
+                initial_adwin,
+                "",
+            ),
+            (
+                "Adaptive DDM",
+                "ddm-model",
+                initial_ddm,
+                "",
+            ),
         ]
     )
 
     revised_table = _comparison_table_html(
         [
-            ("Static Random Forest", "static-model", revised_rf, "degraded"),
-            ("Adaptive ADWIN", "adwin-model", revised_adwin, "recovered"),
-            ("Adaptive DDM", "ddm-model", revised_ddm, "recovered"),
+            (
+                "Static Random Forest",
+                "static-model",
+                revised_rf,
+                "degraded",
+            ),
+            (
+                "Adaptive ADWIN",
+                "adwin-model",
+                revised_adwin,
+                "recovered",
+            ),
+            (
+                "Adaptive DDM",
+                "ddm-model",
+                revised_ddm,
+                "recovered",
+            ),
         ]
     )
 
-    # if abs(revised_adwin["drifted"] - revised_ddm["drifted"]) < 5e-4:
-    #     adaptive_result = f"reached {revised_adwin['drifted']:.3f}"
-    # else:
-    #     adaptive_result = (
-    #         f"reached {revised_adwin['drifted']:.3f} and "
-    #         f"{revised_ddm['drifted']:.3f} respectively"
-    #     )
-
     key_finding = (
-        "The original drift did not create meaningful degradation. Under "
-        "camouflage drift, the frozen Random Forest degraded "
-        "substantially. After detector-triggered retraining, "
-        "ADWIN and DDM achieved higher fully-drifted Recall "
-        "and F1 than the frozen baseline, showing partial "
-        " recovery under concept drift. "
+        "The original drift did not create meaningful degradation. "
+        "Under camouflage drift, the frozen Random Forest degraded "
+        "substantially. After detector-triggered retraining, ADWIN "
+        "and DDM achieved higher fully-drifted Recall and F1 than "
+        "the frozen baseline, showing partial recovery under "
+        "concept drift."
     )
 
     replacements = {
-        "%%KEY_FINDING%%": key_finding,
-        "%%ROOT_VARS%%": _root_css_vars(),
-        "%%FONT_LINKS%%": GOOGLE_FONT_LINKS,
-        "%%DATA_JSON%%": json.dumps(dashboard_data, separators=(",", ":")),
-        "%%METRIC_BUTTONS%%": _metric_buttons_html(),
-        "%%INITIAL_TABLE%%": initial_table,
-        "%%REVISED_TABLE%%": revised_table,
-        "%%DETECTOR_CARDS%%": detector_cards,
-        "%%INITIAL_RF_TRIO%%": _trio(initial_rf),
-        "%%REVISED_RF_TRIO%%": _trio(revised_rf),
-        "%%REVISED_RF_RECALL%%": f"{revised_rf['drifted']:.3f}",
-        "%%REVISED_ADWIN_RECALL%%": f"{revised_adwin['drifted']:.3f}",
-        "%%REVISED_DDM_RECALL%%": f"{revised_ddm['drifted']:.3f}",
-        "%%REVISED_RF_F1%%": f"{f1_drifted('static_random_forest'):.3f}",
-        "%%REVISED_ADWIN_F1%%": f"{f1_drifted('adaptive_adwin'):.3f}",
-        "%%REVISED_DDM_F1%%": f"{f1_drifted('adaptive_ddm'):.3f}",
-        "%%REPRESENTATIVE_SEED%%": str(representative_seed),
-        "%%EVALUATION_ROWS%%": f"{evaluation_rows:,}",
-        "%%EVALUATION_BATCHES%%": str(evaluation_batches),
+        "%%KEY_FINDING%%": (key_finding),
+        "%%ROOT_VARS%%": (_root_css_vars()),
+        "%%FONT_LINKS%%": (GOOGLE_FONT_LINKS),
+        "%%DATA_JSON%%": (
+            json.dumps(
+                dashboard_data,
+                separators=(
+                    ",",
+                    ":",
+                ),
+            )
+        ),
+        "%%METRIC_BUTTONS%%": (_metric_buttons_html()),
+        "%%INITIAL_TABLE%%": (initial_table),
+        "%%REVISED_TABLE%%": (revised_table),
+        "%%DETECTOR_CARDS%%": (detector_cards),
+        "%%INITIAL_RF_TRIO%%": (_trio(initial_rf)),
+        "%%REVISED_RF_TRIO%%": (_trio(revised_rf)),
+        "%%REVISED_RF_RECALL%%": (f"{revised_rf['drifted']:.3f}"),
+        "%%REVISED_ADWIN_RECALL%%": (f"{revised_adwin['drifted']:.3f}"),
+        "%%REVISED_DDM_RECALL%%": (f"{revised_ddm['drifted']:.3f}"),
+        "%%REVISED_RF_F1%%": (f"{f1_drifted('static_random_forest'):.3f}"),
+        "%%REVISED_ADWIN_F1%%": (f"{f1_drifted('adaptive_adwin'):.3f}"),
+        "%%REVISED_DDM_F1%%": (f"{f1_drifted('adaptive_ddm'):.3f}"),
+        "%%REPRESENTATIVE_SEED%%": (str(representative_seed)),
+        "%%EVALUATION_ROWS%%": (f"{evaluation_rows:,}"),
+        "%%EVALUATION_BATCHES%%": (str(evaluation_batches)),
     }
 
     html = _DASHBOARD_TEMPLATE
 
     for token, value in replacements.items():
-        html = html.replace(token, value)
+        html = html.replace(
+            token,
+            value,
+        )
 
-    return _write_text(output_path, html)
+    return _write_text(
+        output_path,
+        html,
+    )
 
 
 # ---------------------------------------------------------------------------
