@@ -47,3 +47,9 @@ results/tmp/
 
 # Generated experiment artifacts
 results/metrics/experiment/
+results/final_separability/
+results/final_camouflage/
+
+# Keep the final comparison dashboard
+results/experiment_comparison/*
+!results/experiment_comparison/index.html

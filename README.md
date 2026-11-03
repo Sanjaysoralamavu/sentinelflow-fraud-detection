@@ -455,9 +455,107 @@ results/metrics/experiment/detector_study/model_phase_summary.csv
 
 ---
 
-## Open the Interactive Dashboard
+---
 
-After running the detector study with `--evaluation-outputs`, open the F1 replay dashboard for the representative camouflage run.
+## Concept Drift Evaluation Dashboard
+
+The final comparison dashboard evaluates concept drift in Card-Not-Present (CNP) fraud detection by comparing two controlled drift scenarios:
+
+- **Initial Evaluation — Original Controlled Drift:** the original drift increased fraud-versus-legitimate separation and produced little meaningful performance degradation.
+- **Revised Evaluation — Camouflage Drift:** fraudulent behavior is moved closer to legitimate behavior, creating a more challenging drift condition for evaluating adaptive recovery.
+
+The dashboard compares frozen static models, adaptive models using ADWIN and DDM drift detection, and an online ensemble across pre-drift, ramp-drift, and fully drifted phases.
+
+### Dashboard Overview
+
+![Concept Drift Evaluation Dashboard](docs/images/dashboard1.jpg)
+
+### Evaluation Comparison
+
+![Initial and Revised Evaluation Comparison](docs/images/dashboard2.jpg)
+
+### Generate the Comparison Dashboard
+
+The committed comparison dashboard represents the seed 543 run with 1.5 million evaluation rows across 30 batches. The repository's headline experimental results are based on the complete three-seed study.
+
+After generating the required evaluation artifacts, rebuild the comparison dashboard with:
+
+```powershell
+python scripts\generate_comparison_dashboard.py
+```
+
+This generates:
+
+```text
+results/experiment_comparison/index.html
+```
+
+### Interactive Dashboard
+
+**[View the dashboard HTML](results/experiment_comparison/index.html)**
+
+To use the interactive dashboard, clone or download the repository and open:
+
+```powershell
+Start-Process results\experiment_comparison\index.html
+```
+
+Available evaluation metrics include:
+
+- Precision
+- Recall
+- F1
+- False Positive Rate (FPR)
+- ROC-AUC
+- Average Precision
+- Precision@100
+
+The dashboard also provides:
+
+- Model performance across the three drift phases
+- Relative performance loss from pre-drift to fully drifted
+- Explanations of the initial and revised drift scenarios
+- A direct comparison of Static Random Forest, Adaptive ADWIN, and Adaptive DDM
+- Concept-drift detection and recovery evidence
+- Detector alarms, false alarms, detection delay, and retraining information
+
+### Open the Dashboard Locally
+
+On macOS:
+
+```bash
+open results/experiment_comparison/index.html
+```
+
+On Linux:
+
+```bash
+xdg-open results/experiment_comparison/index.html
+```
+
+On Windows PowerShell:
+
+```powershell
+Start-Process results\experiment_comparison\index.html
+```
+
+The dashboard uses results from the original controlled-drift and revised camouflage-drift evaluations.
+
+---
+
+## Generated Artifacts
+
+A standard experiment produces:
+
+## Experiment Replay Dashboard
+
+The experiment pipeline also generates per-run interactive replay dashboards for inspecting model performance and detector behavior over the evaluation stream.
+
+For the representative camouflage run using seed 543:
+
+```text
+results/metrics/experiment/detector_study/camouflage/seed_543/evaluation/dashboard/index.html
+```
 
 On macOS:
 
@@ -471,13 +569,13 @@ On Linux:
 xdg-open results/metrics/experiment/detector_study/camouflage/seed_543/evaluation/dashboard/index.html
 ```
 
-On Windows:
+On Windows PowerShell:
 
 ```powershell
-start results\metrics\experiment\detector_study\camouflage\seed_543\evaluation\dashboard\index.html
+Start-Process results\metrics\experiment\detector_study\camouflage\seed_543\evaluation\dashboard\index.html
 ```
 
-The dashboard provides:
+The replay dashboard provides:
 
 - Model performance by batch
 - Pre-drift, ramp-drift, and fully drifted phases
@@ -489,10 +587,6 @@ The dashboard provides:
 - Separate dashboards for F1, precision, recall, FPR, ROC-AUC, and Average Precision
 
 ---
-
-## Generated Artifacts
-
-A standard experiment produces:
 
 ### Reproducibility artifacts
 
